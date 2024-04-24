@@ -20,12 +20,25 @@ class _SkillsPageState extends State<SkillsPage> {
     return Scaffold(
       body: ListView(
         children: [
-          ...?skills?.map((skill) => ListTile(
-                title: Text(skill.name ?? ''),
-                trailing: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.delete_forever_rounded)),
-              )),
+          ...?skills?.map((skill) {
+            int year = DateTime.timestamp().year;
+            int diff = year-(skill.started ?? 0);
+            return ListTile(
+              leading: Text('$diff ${diff != 1 ? "years" : "year"}'),
+              title: Text(skill.name ?? ''),
+              subtitle: LinearProgressIndicator(value: skill.level!.toDouble()/10.0,),
+              trailing: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      skills!.remove(skill);
+                      if (widget.callback != null) {
+                        widget.callback!(skills!);
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.delete_forever_rounded)),
+            );
+          }),
         ],
       ),
       floatingActionButton: FloatingActionButton(
