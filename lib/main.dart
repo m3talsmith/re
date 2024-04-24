@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:re/companies/companies.dart';
 import 'package:re/experience/experience.dart';
 import 'package:re/profile/profile.dart';
@@ -138,11 +139,11 @@ class _AppPageState extends State<AppPage> {
                       ? TextButton.icon(
                           onPressed: () async {
                             var exportPath = await FilePicker.platform.saveFile(
-                              dialogTitle: 'Export data',
-                              fileName: 're.export.json'
-                            );
+                                dialogTitle: 'Export data',
+                                fileName: 're.export.json');
                             if (exportPath != null) {
-                              File(exportPath).writeAsStringSync(jsonEncode(_dataMap));
+                              File(exportPath)
+                                  .writeAsStringSync(jsonEncode(_dataMap));
                             }
                           },
                           icon: const Icon(Icons.sim_card_download_rounded),
@@ -151,7 +152,14 @@ class _AppPageState extends State<AppPage> {
                       : Container(),
                   (Platform.isAndroid || Platform.isIOS)
                       ? IconButton(
-                          onPressed: () {},
+                          onPressed: () async {
+                            await Share.shareXFiles(
+                              [
+                                XFile.fromData(
+                                    utf8.encode(jsonEncode(_dataMap)))
+                              ],
+                            );
+                          },
                           icon: const Icon(Icons.share_rounded),
                         )
                       : Container()
