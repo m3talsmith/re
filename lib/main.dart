@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:re/companies/companies.dart';
 import 'package:re/experience/experience.dart';
@@ -48,9 +49,41 @@ class _AppPageState extends State<AppPage> {
   Map<String, dynamic> _dataMap = {};
   bool _loaded = false;
 
+  late StreamSubscription _streamSubscription;
+
   @override
   initState() {
     super.initState();
+    _streamSubscription =
+        ReceiveSharingIntent.instance.getMediaStream().listen((event) async {
+      var file = File(event.single.path);
+      var appDir = await getApplicationSupportDirectory();
+      var dataDir = Directory(path.join(appDir.path, 'data'));
+      var dataFile = File(path.join(dataDir.path, 'data.json'));
+      if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
+      dataFile.writeAsStringSync(file.readAsStringSync());
+      await _loadData();
+      ReceiveSharingIntent.instance.reset();
+    });
+    ReceiveSharingIntent.instance.getInitialMedia().then((event) async {
+      if (event.isNotEmpty) {
+        var file = File(event.single.path);
+        var appDir = await getApplicationSupportDirectory();
+        var dataDir = Directory(path.join(appDir.path, 'data'));
+        var dataFile = File(path.join(dataDir.path, 'data.json'));
+        if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
+        dataFile.writeAsStringSync(file.readAsStringSync());
+        await _loadData();
+        ReceiveSharingIntent.instance.reset();
+      }
+    });
+
+    @override
+    dispose() {
+      _streamSubscription.cancel();
+      super.dispose();
+    }
+
     _loadData().then((value) => setState(() {
           _loaded = true;
         }));
@@ -120,17 +153,46 @@ class _AppPageState extends State<AppPage> {
 
   @override
   Widget build(BuildContext context) {
+    GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
     return _loaded
         ? DefaultTabController(
             length: 4,
             child: Scaffold(
+              key: scaffoldKey,
               appBar: AppBar(
+                leading: IconButton(
+                  onPressed: () {
+                    scaffoldKey.currentState?.openDrawer();
+                  },
+                  icon: const Icon(Icons.menu_rounded),
+                ),
                 title: const Text('Re'),
                 centerTitle: true,
                 actions: [
                   (Platform.isLinux || Platform.isMacOS || Platform.isWindows)
                       ? TextButton.icon(
-                          onPressed: () {},
+                          onPressed: () async {
+                            var result = await FilePicker.platform.pickFiles(
+                              dialogTitle: 'Import data',
+                            );
+                            log('result: $result');
+                            if (result != null && result.xFiles.isNotEmpty) {
+                              var appDir =
+                                  await getApplicationSupportDirectory();
+                              var dataDir =
+                                  Directory(path.join(appDir.path, 'data'));
+                              var dataFile =
+                                  File(path.join(dataDir.path, 'data.json'));
+                              if (!dataFile.existsSync()) {
+                                dataFile.createSync(recursive: true);
+                              }
+                              dataFile.writeAsStringSync(
+                                  await result.xFiles.single.readAsString());
+                              setState(() {
+                                _loadData();
+                              });
+                            }
+                          },
                           icon: const Icon(Icons.upload_file_rounded),
                           label: const Text('Import'),
                         )
@@ -182,6 +244,18 @@ class _AppPageState extends State<AppPage> {
                     text: 'Experience',
                   ),
                 ]),
+              ),
+              drawer: Drawer(
+                child: ListView(
+                  children: [
+                    ListTile(
+                      title: TextButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.settings_rounded),
+                          label: const Text('Settings')),
+                    )
+                  ],
+                ),
               ),
               body: Padding(
                 padding: const EdgeInsets.all(16.0),
