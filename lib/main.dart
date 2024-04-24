@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:file_picker/file_picker.dart';
 import 'package:re/companies/companies.dart';
 import 'package:re/experience/experience.dart';
 import 'package:re/profile/profile.dart';
@@ -108,7 +110,7 @@ class _AppPageState extends State<AppPage> {
   List<Skill> _loadSkills() {
     List<Skill> skills = [];
     if (_dataMap['skills'] != null) {
-      for(Map<String, dynamic> skillData in _dataMap['skills']) {
+      for (Map<String, dynamic> skillData in _dataMap['skills']) {
         skills.add(Skill.fromMap(skillData));
       }
     }
@@ -134,8 +136,14 @@ class _AppPageState extends State<AppPage> {
                       : Container(),
                   (Platform.isLinux || Platform.isMacOS || Platform.isWindows)
                       ? TextButton.icon(
-                          onPressed: () {
-
+                          onPressed: () async {
+                            var exportPath = await FilePicker.platform.saveFile(
+                              dialogTitle: 'Export data',
+                              fileName: 're.export.json'
+                            );
+                            if (exportPath != null) {
+                              File(exportPath).writeAsStringSync(jsonEncode(_dataMap));
+                            }
                           },
                           icon: const Icon(Icons.sim_card_download_rounded),
                           label: const Text('Export'),
