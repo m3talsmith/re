@@ -4,11 +4,13 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:cryptography/cryptography.dart';
+import 'package:openssh_ed25519/openssh_ed25519.dart';
+import 'package:git/git.dart' as git;
 import 'package:re/companies/companies.dart';
 import 'package:re/experience/experience.dart';
 import 'package:re/profile/profile.dart';
@@ -47,46 +49,85 @@ class _AppPageState extends State<AppPage> {
   List<Widget> _pages = [];
 
   Map<String, dynamic> _dataMap = {};
-  bool _loaded = false;
+  bool _dataLoaded = false;
 
-  late StreamSubscription _streamSubscription;
+  String _privateKey = "";
+  String _publicKey = "";
+
+  String _repo = "";
 
   @override
   initState() {
     super.initState();
-    _streamSubscription =
-        ReceiveSharingIntent.instance.getMediaStream().listen((event) async {
-      var file = File(event.single.path);
-      var appDir = await getApplicationSupportDirectory();
-      var dataDir = Directory(path.join(appDir.path, 'data'));
-      var dataFile = File(path.join(dataDir.path, 'data.json'));
-      if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
-      dataFile.writeAsStringSync(file.readAsStringSync());
-      await _loadData();
-      ReceiveSharingIntent.instance.reset();
-    });
-    ReceiveSharingIntent.instance.getInitialMedia().then((event) async {
-      if (event.isNotEmpty) {
-        var file = File(event.single.path);
-        var appDir = await getApplicationSupportDirectory();
-        var dataDir = Directory(path.join(appDir.path, 'data'));
-        var dataFile = File(path.join(dataDir.path, 'data.json'));
-        if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
-        dataFile.writeAsStringSync(file.readAsStringSync());
-        await _loadData();
-        ReceiveSharingIntent.instance.reset();
+    _loadData().then((value) => setState(() {
+          _dataLoaded = true;
+        }));
+    _loadKeys();
+  }
+
+  _loadKeys() async {
+    var appDir = await getApplicationSupportDirectory();
+    var keyDir = Directory(path.join(appDir.path, 'keys'));
+    var privateKeyFile = File(path.join(keyDir.path, 'key'));
+    var publicKeyFile = File(path.join(keyDir.path, 'key.pub'));
+
+    setState(() {
+      if (privateKeyFile.existsSync() && publicKeyFile.existsSync()) {
+        _privateKey = privateKeyFile.readAsStringSync();
+        _publicKey = publicKeyFile.readAsStringSync();
       }
     });
+  }
 
-    @override
-    dispose() {
-      _streamSubscription.cancel();
-      super.dispose();
+  _saveKeys() async {
+    if (_privateKey.isEmpty || _publicKey.isEmpty) return;
+
+    var appDir = await getApplicationSupportDirectory();
+    var keyDir = Directory(path.join(appDir.path, 'keys'));
+    var privateKeyFile = File(path.join(keyDir.path, 'key'));
+    var publicKeyFile = File(path.join(keyDir.path, 'key.pub'));
+
+    if (!privateKeyFile.existsSync()) {
+      privateKeyFile.createSync(recursive: true);
     }
+    if (!publicKeyFile.existsSync()) publicKeyFile.createSync(recursive: true);
 
-    _loadData().then((value) => setState(() {
-          _loaded = true;
-        }));
+    privateKeyFile.writeAsStringSync(_privateKey);
+    publicKeyFile.writeAsStringSync(_publicKey);
+  }
+
+  _generateKeys() async {
+    final keyPair = await Ed25519().newKeyPair();
+
+    var privateBytes = await keyPair.extractPrivateKeyBytes();
+    var public = await keyPair.extractPublicKey();
+    var publicBytes = public.bytes;
+
+    var publicStr = encodeEd25519Public(publicBytes);
+    var privateStr = encodeEd25519Private(
+      privateBytes: privateBytes,
+      publicBytes: publicBytes,
+    );
+
+    setState(() {
+      _privateKey = privateStr;
+      _publicKey = publicStr;
+      _saveKeys();
+    });
+  }
+
+  _syncRepo() async {
+    var appDir = await getApplicationSupportDirectory();
+    var dataDir = Directory(path.join(appDir.path, 'data'));
+    var isGitEnabled = await git.GitDir.isGitDir(dataDir.path);
+    if (!isGitEnabled) {
+      await git.runGit(['init', '.'], processWorkingDir: dataDir.path);
+      await git.runGit(['remote', 'add', 'origin', _repo], processWorkingDir: dataDir.path);
+    }
+    await git.runGit(['add', '.'], throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['commit', '-am', '"data updated - ${DateTime.timestamp()}"'], throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['pull', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['push', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
   }
 
   _saveData() async {
@@ -95,11 +136,17 @@ class _AppPageState extends State<AppPage> {
     var dataFile = File(path.join(dataDir.path, 'data.json'));
     if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
     dataFile.writeAsStringSync(jsonEncode(_dataMap));
+    if (await git.GitDir.isGitDir(dataDir.path)) {
+      _syncRepo();
+    }
   }
 
   Future<bool> _loadData() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
+    if (await git.GitDir.isGitDir(dataDir.path)) {
+      await git.runGit(['pull', 'origin', 'main']);
+    }
     var dataFile = File(path.join(dataDir.path, 'data.json'));
     if (dataFile.existsSync()) {
       setState(() {
@@ -154,78 +201,22 @@ class _AppPageState extends State<AppPage> {
   @override
   Widget build(BuildContext context) {
     GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
-    return _loaded
+    return _dataLoaded
         ? DefaultTabController(
             length: 4,
             child: Scaffold(
               key: scaffoldKey,
               appBar: AppBar(
-                leading: IconButton(
-                  onPressed: () {
-                    scaffoldKey.currentState?.openDrawer();
-                  },
-                  icon: const Icon(Icons.menu_rounded),
-                ),
+                actions: [
+                  IconButton(
+                    onPressed: () {
+                      scaffoldKey.currentState?.openEndDrawer();
+                    },
+                    icon: const Icon(Icons.settings_rounded),
+                  ),
+                ],
                 title: const Text('Re'),
                 centerTitle: true,
-                actions: [
-                  (Platform.isLinux || Platform.isMacOS || Platform.isWindows)
-                      ? TextButton.icon(
-                          onPressed: () async {
-                            var result = await FilePicker.platform.pickFiles(
-                              dialogTitle: 'Import data',
-                            );
-                            log('result: $result');
-                            if (result != null && result.xFiles.isNotEmpty) {
-                              var appDir =
-                                  await getApplicationSupportDirectory();
-                              var dataDir =
-                                  Directory(path.join(appDir.path, 'data'));
-                              var dataFile =
-                                  File(path.join(dataDir.path, 'data.json'));
-                              if (!dataFile.existsSync()) {
-                                dataFile.createSync(recursive: true);
-                              }
-                              dataFile.writeAsStringSync(
-                                  await result.xFiles.single.readAsString());
-                              setState(() {
-                                _loadData();
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.upload_file_rounded),
-                          label: const Text('Import'),
-                        )
-                      : Container(),
-                  (Platform.isLinux || Platform.isMacOS || Platform.isWindows)
-                      ? TextButton.icon(
-                          onPressed: () async {
-                            var exportPath = await FilePicker.platform.saveFile(
-                                dialogTitle: 'Export data',
-                                fileName: 're.export.json');
-                            if (exportPath != null) {
-                              File(exportPath)
-                                  .writeAsStringSync(jsonEncode(_dataMap));
-                            }
-                          },
-                          icon: const Icon(Icons.sim_card_download_rounded),
-                          label: const Text('Export'),
-                        )
-                      : Container(),
-                  (Platform.isAndroid || Platform.isIOS)
-                      ? IconButton(
-                          onPressed: () async {
-                            await Share.shareXFiles(
-                              [
-                                XFile.fromData(
-                                    utf8.encode(jsonEncode(_dataMap)))
-                              ],
-                            );
-                          },
-                          icon: const Icon(Icons.share_rounded),
-                        )
-                      : Container()
-                ],
                 bottom: const TabBar(tabs: [
                   Tab(
                     icon: Icon(Icons.person_rounded),
@@ -245,14 +236,158 @@ class _AppPageState extends State<AppPage> {
                   ),
                 ]),
               ),
-              drawer: Drawer(
+              endDrawer: Drawer(
                 child: ListView(
                   children: [
                     ListTile(
                       title: TextButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.settings_rounded),
-                          label: const Text('Settings')),
+                        onPressed: () async {
+                          var result = await FilePicker.platform.pickFiles(
+                            dialogTitle: 'Import data',
+                          );
+                          log('result: $result');
+                          if (result != null && result.xFiles.isNotEmpty) {
+                            var appDir = await getApplicationSupportDirectory();
+                            var dataDir =
+                                Directory(path.join(appDir.path, 'data'));
+                            var dataFile =
+                                File(path.join(dataDir.path, 'data.json'));
+                            if (!dataFile.existsSync()) {
+                              dataFile.createSync(recursive: true);
+                            }
+                            dataFile.writeAsStringSync(
+                                await result.xFiles.single.readAsString());
+                            setState(() {
+                              _loadData();
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.upload_file_rounded),
+                        label: const Text('Import'),
+                      ),
+                    ),
+                    ListTile(
+                      title: TextButton.icon(
+                        onPressed: () async {
+                          var exportPath = await FilePicker.platform.saveFile(
+                              dialogTitle: 'Export data',
+                              fileName: 're.export.json');
+                          if (exportPath != null) {
+                            File(exportPath)
+                                .writeAsStringSync(jsonEncode(_dataMap));
+                          }
+                        },
+                        icon: const Icon(Icons.sim_card_download_rounded),
+                        label: const Text('Export'),
+                      ),
+                    ),
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                                await showModalBottomSheet(
+                                  context: context,
+                                  builder: (context) {
+                                    if (_publicKey.isEmpty) {
+                                      _generateKeys();
+                                    }
+                                    return Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            'Git Repo',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: TextFormField(
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  _repo = value;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                          Text(
+                                            'Public Key',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge,
+                                          ),
+                                          if (_publicKey.isNotEmpty)
+                                            Container(
+                                              color: Theme.of(context)
+                                                  .primaryColor,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  _publicKey,
+                                                  style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .canvasColor),
+                                                ),
+                                              ),
+                                            ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              children: [
+                                                TextButton.icon(
+                                                    onPressed: () async {
+                                                      await Clipboard.setData(
+                                                        ClipboardData(
+                                                            text: _publicKey),
+                                                      );
+                                                    },
+                                                    icon: const Icon(
+                                                        Icons.copy_rounded),
+                                                    label: const Text(
+                                                        'Copy Public Key')),
+                                                Expanded(child: Container()),
+                                                ElevatedButton.icon(
+                                                  onPressed: () async {
+                                                    await _syncRepo();
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                      Icons.link_rounded),
+                                                  label: const Text(
+                                                      'Link Git Repo'),
+                                                  style: ButtonStyle(
+                                                      backgroundColor:
+                                                          MaterialStatePropertyAll(
+                                                              Theme.of(context)
+                                                                  .primaryColor),
+                                                      foregroundColor:
+                                                          MaterialStatePropertyAll(
+                                                              Theme.of(context)
+                                                                  .canvasColor)),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: const Text('Link to Git Repo'),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   ],
                 ),
@@ -265,11 +400,13 @@ class _AppPageState extends State<AppPage> {
               ),
             ),
           )
-        : const Row(
-            children: [
-              CircularProgressIndicator(),
-              Text('Loading data...'),
-            ],
+        : const Scaffold(
+            body: Row(
+              children: [
+                CircularProgressIndicator(),
+                Text('Loading data...'),
+              ],
+            ),
           );
   }
 }
