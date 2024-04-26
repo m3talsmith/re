@@ -119,14 +119,16 @@ class _AppPageState extends State<AppPage> {
   _syncRepo() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
+    log(dataDir.path);
     var isGitEnabled = await git.GitDir.isGitDir(dataDir.path);
     if (!isGitEnabled) {
       await git.runGit(['init', '.'], processWorkingDir: dataDir.path);
       await git.runGit(['remote', 'add', 'origin', _repo], processWorkingDir: dataDir.path);
+      await git.runGit(['branch', '-m', 'main'], processWorkingDir: dataDir.path);
     }
     await git.runGit(['add', '.'], throwOnError: false, processWorkingDir: dataDir.path);
-    await git.runGit(['commit', '-am', '"data updated - ${DateTime.timestamp()}"'], throwOnError: false, processWorkingDir: dataDir.path);
-    await git.runGit(['pull', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['commit', '-am', 'data updated - ${DateTime.timestamp()}'], throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['pull', '--merge', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
     await git.runGit(['push', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
   }
 
@@ -145,7 +147,7 @@ class _AppPageState extends State<AppPage> {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
     if (await git.GitDir.isGitDir(dataDir.path)) {
-      await git.runGit(['pull', 'origin', 'main']);
+      await _syncRepo();
     }
     var dataFile = File(path.join(dataDir.path, 'data.json'));
     if (dataFile.existsSync()) {
@@ -160,7 +162,10 @@ class _AppPageState extends State<AppPage> {
             skills: _loadSkills(),
             callback: _saveSkills,
           ),
-          const CompaniesPage(),
+          CompaniesPage(
+            companies: _loadCompanies(),
+            callback: _saveCompanies,
+          ),
           const ExperiencePage()
         ];
       });
@@ -196,6 +201,23 @@ class _AppPageState extends State<AppPage> {
       }
     }
     return skills;
+  }
+
+  _saveCompanies(List<Company> companies) {
+    setState(() {
+      _dataMap['companies'] = companies.map((company) => company.toMap()).toList();
+      _saveData();
+    });
+  }
+
+  List<Company> _loadCompanies() {
+    List<Company> companies = [];
+    if (_dataMap['companies'] != null) {
+      for (Map<String, dynamic> companyData in _dataMap['companies']) {
+        companies.add(Company.fromMap(companyData));
+      }
+    }
+    return companies;
   }
 
   @override
@@ -401,11 +423,17 @@ class _AppPageState extends State<AppPage> {
             ),
           )
         : const Scaffold(
-            body: Row(
-              children: [
-                CircularProgressIndicator(),
-                Text('Loading data...'),
-              ],
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('Loading data...'),
+                  ),
+                ],
+              ),
             ),
           );
   }
