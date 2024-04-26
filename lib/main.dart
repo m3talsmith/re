@@ -55,6 +55,7 @@ class _AppPageState extends State<AppPage> {
   String _publicKey = "";
 
   String _repo = "";
+  bool _hasGit = false;
 
   @override
   initState() {
@@ -62,7 +63,25 @@ class _AppPageState extends State<AppPage> {
     _loadData().then((value) => setState(() {
           _dataLoaded = true;
         }));
-    _loadKeys();
+    _loadGit();
+  }
+
+  _loadGit() async {
+    var appDir = await getApplicationSupportDirectory();
+    var workingDir = path.join(appDir.path, 'data');
+    try {
+      var result = await git.runGit(['remote', 'get-url', 'origin'],
+          processWorkingDir: workingDir);
+      setState(() {
+        _repo = result.stdout;
+        _hasGit = true;
+        _loadKeys();
+      });
+    } catch (_) {
+      setState(() {
+        _hasGit = false;
+      });
+    }
   }
 
   _loadKeys() async {
@@ -123,13 +142,20 @@ class _AppPageState extends State<AppPage> {
     var isGitEnabled = await git.GitDir.isGitDir(dataDir.path);
     if (!isGitEnabled) {
       await git.runGit(['init', '.'], processWorkingDir: dataDir.path);
-      await git.runGit(['remote', 'add', 'origin', _repo], processWorkingDir: dataDir.path);
-      await git.runGit(['branch', '-m', 'main'], processWorkingDir: dataDir.path);
+      await git.runGit(['remote', 'add', 'origin', _repo],
+          processWorkingDir: dataDir.path);
+      await git
+          .runGit(['branch', '-m', 'main'], processWorkingDir: dataDir.path);
     }
-    await git.runGit(['add', '.'], throwOnError: false, processWorkingDir: dataDir.path);
-    await git.runGit(['commit', '-am', 'data updated - ${DateTime.timestamp()}'], throwOnError: false, processWorkingDir: dataDir.path);
-    await git.runGit(['pull', '--merge', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
-    await git.runGit(['push', 'origin', 'main'], throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['add', '.'],
+        throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(
+        ['commit', '-am', 'data updated - ${DateTime.timestamp()}'],
+        throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['pull', '--merge', 'origin', 'main'],
+        throwOnError: false, processWorkingDir: dataDir.path);
+    await git.runGit(['push', 'origin', 'main'],
+        throwOnError: false, processWorkingDir: dataDir.path);
   }
 
   _saveData() async {
@@ -205,7 +231,8 @@ class _AppPageState extends State<AppPage> {
 
   _saveCompanies(List<Company> companies) {
     setState(() {
-      _dataMap['companies'] = companies.map((company) => company.toMap()).toList();
+      _dataMap['companies'] =
+          companies.map((company) => company.toMap()).toList();
       _saveData();
     });
   }
@@ -303,114 +330,154 @@ class _AppPageState extends State<AppPage> {
                         label: const Text('Export'),
                       ),
                     ),
-                    const Divider(),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                Navigator.of(context).pop();
-                                await showModalBottomSheet(
-                                  context: context,
-                                  builder: (context) {
-                                    if (_publicKey.isEmpty) {
-                                      _generateKeys();
-                                    }
-                                    return Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            'Git Repo',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelLarge,
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: TextFormField(
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _repo = value;
-                                                });
-                                              },
+                    if (_hasGit) const Divider(),
+                    if (_hasGit)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_repo.isNotEmpty)
+                              Column(
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text('Linked Git Repo'),
+                                  ),
+                                  Text(
+                                    _repo,
+                                    style: TextStyle(
+                                      backgroundColor:
+                                          Theme.of(context).primaryColor,
+                                      color: Theme.of(context).canvasColor,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ListTile(
+                              title: ElevatedButton.icon(
+                                icon: const Icon(Icons.link_rounded),
+                                label: const Text('Link to new Git Repo'),
+                                style: ButtonStyle(
+                                  backgroundColor: MaterialStatePropertyAll(
+                                      Theme.of(context).primaryColor),
+                                  foregroundColor: MaterialStatePropertyAll(
+                                      Theme.of(context).canvasColor),
+                                  iconColor: MaterialStatePropertyAll(
+                                      Theme.of(context).canvasColor),
+                                ),
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  await showModalBottomSheet(
+                                    context: context,
+                                    builder: (context) {
+                                      if (_publicKey.isEmpty) {
+                                        _generateKeys();
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              'Git Repo',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelLarge,
                                             ),
-                                          ),
-                                          Text(
-                                            'Public Key',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelLarge,
-                                          ),
-                                          if (_publicKey.isNotEmpty)
-                                            Container(
-                                              color: Theme.of(context)
-                                                  .primaryColor,
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  _publicKey,
-                                                  style: TextStyle(
-                                                      color: Theme.of(context)
-                                                          .canvasColor),
-                                                ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: TextFormField(
+                                                initialValue: _repo,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    _repo = value;
+                                                  });
+                                                },
                                               ),
                                             ),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Row(
-                                              children: [
-                                                TextButton.icon(
+                                            Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Public Key',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelLarge,
+                                              ),
+                                            ),
+                                            if (_publicKey.isNotEmpty)
+                                              Container(
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(
+                                                          8.0),
+                                                  child: Text(
+                                                    _publicKey,
+                                                    style: TextStyle(
+                                                        color:
+                                                            Theme.of(context)
+                                                                .canvasColor),
+                                                  ),
+                                                ),
+                                              ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Row(
+                                                children: [
+                                                  TextButton.icon(
+                                                      onPressed: () async {
+                                                        await Clipboard
+                                                            .setData(
+                                                          ClipboardData(
+                                                              text:
+                                                                  _publicKey),
+                                                        );
+                                                      },
+                                                      icon: const Icon(
+                                                          Icons.copy_rounded),
+                                                      label: const Text(
+                                                          'Copy Public Key')),
+                                                  Expanded(
+                                                      child: Container()),
+                                                  ElevatedButton.icon(
                                                     onPressed: () async {
-                                                      await Clipboard.setData(
-                                                        ClipboardData(
-                                                            text: _publicKey),
-                                                      );
+                                                      await _syncRepo();
+                                                      Navigator.of(context)
+                                                          .pop();
                                                     },
                                                     icon: const Icon(
-                                                        Icons.copy_rounded),
+                                                        Icons.link_rounded),
                                                     label: const Text(
-                                                        'Copy Public Key')),
-                                                Expanded(child: Container()),
-                                                ElevatedButton.icon(
-                                                  onPressed: () async {
-                                                    await _syncRepo();
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                      Icons.link_rounded),
-                                                  label: const Text(
-                                                      'Link Git Repo'),
-                                                  style: ButtonStyle(
-                                                      backgroundColor:
-                                                          MaterialStatePropertyAll(
-                                                              Theme.of(context)
-                                                                  .primaryColor),
-                                                      foregroundColor:
-                                                          MaterialStatePropertyAll(
-                                                              Theme.of(context)
-                                                                  .canvasColor)),
-                                                ),
-                                              ],
+                                                        'Link Git Repo'),
+                                                    style: ButtonStyle(
+                                                        backgroundColor:
+                                                            MaterialStatePropertyAll(
+                                                                Theme.of(
+                                                                        context)
+                                                                    .primaryColor),
+                                                        foregroundColor:
+                                                            MaterialStatePropertyAll(
+                                                                Theme.of(
+                                                                        context)
+                                                                    .canvasColor)),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                              child: const Text('Link to Git Repo'),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    )
+                          ],
+                        ),
+                      )
                   ],
                 ),
               ),
