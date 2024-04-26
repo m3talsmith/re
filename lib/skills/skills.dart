@@ -28,7 +28,7 @@ class _SkillsPageState extends State<SkillsPage> {
               title: Text(e.name ?? ''),
               subtitle: LinearProgressIndicator(value: e.level!.toDouble()/10.0,),
               trailing: SizedBox(
-                width: 80,
+                width: 100,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [

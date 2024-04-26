@@ -25,7 +25,7 @@ class _CompaniesPageState extends State<CompaniesPage> {
           ...?companies?.map((e) => ListTile(
             title: Text(e.name ?? ''),
             trailing: SizedBox(
-              width: 80,
+              width: 100,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
