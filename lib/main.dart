@@ -158,6 +158,12 @@ class _AppPageState extends State<AppPage> {
         throwOnError: false, processWorkingDir: dataDir.path);
   }
 
+  _clearData() async {
+    _dataMap = {};
+    await _saveData();
+    _loadData();
+  }
+
   _saveData() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
@@ -286,7 +292,7 @@ class _AppPageState extends State<AppPage> {
                 ]),
               ),
               endDrawer: Drawer(
-                child: ListView(
+                child: Column(
                   children: [
                     ListTile(
                       title: TextButton.icon(
@@ -397,7 +403,8 @@ class _AppPageState extends State<AppPage> {
                                               ),
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.all(8.0),
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
                                               child: Text(
                                                 'Public Key',
                                                 style: Theme.of(context)
@@ -411,14 +418,12 @@ class _AppPageState extends State<AppPage> {
                                                     .primaryColor,
                                                 child: Padding(
                                                   padding:
-                                                      const EdgeInsets.all(
-                                                          8.0),
+                                                      const EdgeInsets.all(8.0),
                                                   child: Text(
                                                     _publicKey,
                                                     style: TextStyle(
-                                                        color:
-                                                            Theme.of(context)
-                                                                .canvasColor),
+                                                        color: Theme.of(context)
+                                                            .canvasColor),
                                                   ),
                                                 ),
                                               ),
@@ -429,19 +434,16 @@ class _AppPageState extends State<AppPage> {
                                                 children: [
                                                   TextButton.icon(
                                                       onPressed: () async {
-                                                        await Clipboard
-                                                            .setData(
+                                                        await Clipboard.setData(
                                                           ClipboardData(
-                                                              text:
-                                                                  _publicKey),
+                                                              text: _publicKey),
                                                         );
                                                       },
                                                       icon: const Icon(
                                                           Icons.copy_rounded),
                                                       label: const Text(
                                                           'Copy Public Key')),
-                                                  Expanded(
-                                                      child: Container()),
+                                                  Expanded(child: Container()),
                                                   ElevatedButton.icon(
                                                     onPressed: () async {
                                                       await _syncRepo();
@@ -477,7 +479,78 @@ class _AppPageState extends State<AppPage> {
                             ),
                           ],
                         ),
-                      )
+                      ),
+                    Expanded(
+                      child: Container(),
+                      flex: 3,
+                    ),
+                    ListTile(
+                      title: TextButton.icon(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            var message = 'Are you sure that you want to clear all of your data?';
+                            var width = MediaQuery.of(context).size.width/16;
+                            var height = MediaQuery.of(context).size.height/2-(message.length*2);
+                            bool choice = await showDialog(
+                              context: context,
+                              builder: (context) {
+                                return Dialog(
+                                  insetPadding: EdgeInsets.only(
+                                    left: width,
+                                    right: width,
+                                    top: height,
+                                    bottom: height,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Expanded(child: Container()),
+                                      Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Text(
+                                          message,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
+                                        ),
+                                      ),
+                                      Expanded(child: Container()),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Row(
+                                          children: [
+                                            TextButton.icon(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(false);
+                                                },
+                                                icon: const Icon(
+                                                    Icons.cancel_rounded),
+                                                label: const Text('Cancel')),
+                                            Expanded(child: Container()),
+                                            ElevatedButton.icon(
+                                                icon: const Icon(
+                                                    Icons.check_rounded),
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(true);
+                                                },
+                                                label:
+                                                    const Text('Delete Data'))
+                                          ],
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                            if (choice) {
+                              await _clearData();
+                            }
+                          },
+                          icon: const Icon(Icons.delete_forever_rounded),
+                          label: const Text('Clear Data')),
+                    )
                   ],
                 ),
               ),
