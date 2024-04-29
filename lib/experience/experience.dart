@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../companies/model.dart';
@@ -105,7 +106,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
                 [];
             var subtitle = Column(
               children: [
-                Row(
+                Wrap(
                   children: roleNames
                       .map((e) => Padding(
                             padding: const EdgeInsets.only(right: 8.0),
@@ -121,7 +122,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
                       .toList(),
                 ),
                 const Padding(padding: EdgeInsets.all(4.0)),
-                Row(
+                Wrap(
                   children: skillNames
                       .map((e) => Padding(
                             padding: const EdgeInsets.only(right: 8.0),
@@ -142,7 +143,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
               title: title,
               subtitle: subtitle,
               trailing: SizedBox(
-                width: 80,
+                width: 100,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [

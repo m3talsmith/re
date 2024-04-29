@@ -184,8 +184,18 @@ class _AppPageState extends State<AppPage> {
   Future<bool> _loadData() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
-    if (await git.GitDir.isGitDir(dataDir.path)) {
-      await _syncRepo();
+    if (!dataDir.existsSync()) {
+      dataDir.createSync(recursive: true);
+      setState(() {
+        _dataMap = {};
+        _saveData();
+        return;
+      });
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      if (await git.GitDir.isGitDir(dataDir.path)) {
+        await _syncRepo();
+      }
     }
     var dataFile = File(path.join(dataDir.path, 'data.json'));
     if (dataFile.existsSync()) {
@@ -336,13 +346,13 @@ class _AppPageState extends State<AppPage> {
               endDrawer: Drawer(
                 child: Column(
                   children: [
+                    if (Platform.isIOS) Padding(padding: const EdgeInsets.only(top: 50), child: Container(),),
                     ListTile(
                       title: TextButton.icon(
                         onPressed: () async {
                           var result = await FilePicker.platform.pickFiles(
                             dialogTitle: 'Import data',
                           );
-                          log('result: $result');
                           if (result != null && result.xFiles.isNotEmpty) {
                             var appDir = await getApplicationSupportDirectory();
                             var dataDir =
