@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 import '../companies/model.dart';
@@ -67,7 +69,6 @@ class _ExperiencePageState extends State<ExperiencePage> {
             var yearsEnded = e.roles?.map((e) => e.ended?.year);
             var started = yearsStarted
                 .reduce((value, element) => element < value ? element : value);
-            var current = yearsEnded == null;
             var ended = yearsEnded?.reduce((value, element) {
               if (element == null) return value;
               if (value == null) return element;
@@ -76,7 +77,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
             var title = Row(
               children: [
                 Text('$started - '),
-                Text(current ? 'Current' : '$ended'),
+                Text(ended == null ? 'Current' : '$ended'),
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),
                   child: Text(e.company?.name ?? 'Unspecified'),
@@ -146,7 +147,31 @@ class _ExperiencePageState extends State<ExperiencePage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                        onPressed: () {}, icon: const Icon(Icons.edit_rounded)),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (context) {
+                              return Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: _EditExperience(
+                                  companies: widget.companies,
+                                  skills: widget.skills,
+                                  cancel: () => Navigator.of(context).pop(),
+                                  callback: (experience) {
+                                    setState(() {
+                                      _experiences.remove(e);
+                                      _experiences.add(experience);
+                                      Navigator.of(context).pop();
+                                    });
+                                  },
+                                  company: e.company!,
+                                  roles: e.roles ?? [],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.edit_rounded)),
                     IconButton(
                         onPressed: () {
                           setState(() {
@@ -510,8 +535,15 @@ class _AddExperienceState extends State<_AddExperience> {
 }
 
 class _EditExperience extends StatefulWidget {
-  const _EditExperience(
-      {super.key, this.callback, this.cancel, this.companies, this.skills});
+  const _EditExperience({
+    super.key,
+    this.callback,
+    this.cancel,
+    this.companies,
+    this.skills,
+    required this.company,
+    required this.roles,
+  });
 
   final Function(Experience experience)? callback;
   final Function()? cancel;
@@ -519,13 +551,20 @@ class _EditExperience extends StatefulWidget {
   final List<Company>? companies;
   final List<Skill>? skills;
 
+  final Company company;
+  final List<Role> roles;
+
   @override
-  State<StatefulWidget> createState() => _AddExperienceState();
+  State<StatefulWidget> createState() => _EditExperienceState(company: company, roles: roles);
 }
 
 class _EditExperienceState extends State<_EditExperience> {
-  Company? _company;
-  List<Role> _roles = [];
+  _EditExperienceState({required Company company, required List<Role> roles})
+      : _company = company,
+        _roles = roles;
+
+  Company _company;
+  List<Role> _roles;
 
   bool _addingRole = false;
   bool _addingSkill = false;
@@ -583,6 +622,7 @@ class _EditExperienceState extends State<_EditExperience> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: DropdownButtonFormField(
+              value: widget.companies!.contains(_company) ? _company : null,
               items: widget.companies
                   ?.map(
                     (e) => DropdownMenuItem(
@@ -593,7 +633,7 @@ class _EditExperienceState extends State<_EditExperience> {
                   .toList(),
               onChanged: (value) {
                 setState(() {
-                  _company = value;
+                  _company = value!;
                 });
               },
               decoration: const InputDecoration(label: Text('Company')),
@@ -794,9 +834,6 @@ class _EditExperienceState extends State<_EditExperience> {
               ElevatedButton.icon(
                 onPressed: () {
                   List<String> errors = [];
-                  if (_company == null) {
-                    errors.add('You must select a company');
-                  }
                   if (_roles.isEmpty) {
                     errors.add('You must include at least one role');
                   }
@@ -834,7 +871,7 @@ class _EditExperienceState extends State<_EditExperience> {
                   if (widget.callback != null) widget.callback!(experience);
                 },
                 icon: const Icon(Icons.check_rounded),
-                label: const Text('Edit Experience'),
+                label: const Text('Update'),
                 style: ButtonStyle(
                   backgroundColor:
                       MaterialStatePropertyAll(Theme.of(context).primaryColor),

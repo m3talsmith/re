@@ -56,13 +56,13 @@ class _SkillsPageState extends State<SkillsPage> {
                                   callback: (skill) {
                                     if (skill.name != null &&
                                         skill.name != '') {
-                                      Navigator.pop(context);
                                       setState(() {
                                         _skills!.remove(e);
                                         _skills!.add(skill);
                                         if (widget.callback != null) {
                                           widget.callback!(_skills!.toList());
                                         }
+                                        Navigator.of(context).pop();
                                       });
                                     }
                                   },
@@ -355,7 +355,7 @@ class _EditSkillState extends State<_EditSkill> {
                 }
               },
               icon: const Icon(Icons.check_rounded),
-              label: const Text('Add'),
+              label: const Text('Update'),
               style: ButtonStyle(
                 backgroundColor: MaterialStatePropertyAll(
                   Theme.of(context).primaryColor,

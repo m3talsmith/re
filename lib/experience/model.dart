@@ -6,7 +6,10 @@ class Experience {
 
   Experience.fromMap(Map<String, dynamic> data) {
     company = Company.fromMap(data['company']);
-    roles = (data['roles'] as List<Map<String, dynamic>>).map((e) => Role.fromMap(e)).toList();
+    roles ??= [];
+    for (var role in data['roles'] ?? []) {
+      roles!.add(Role.fromMap(role));
+    }
   }
 
   Company? company;
@@ -31,8 +34,11 @@ class Role {
     title = data['title'];
     summary = data['summary'];
     started = DateTime.parse(data['started']);
-    ended = DateTime.parse(data['ended']);
-    skills = (data['skills'] as List<Map<String, dynamic>>).map((e) => Skill.fromMap(e)).toList();
+    ended = data['ended'] != null ? DateTime.parse(data['ended']) : null;
+    skills ??= [];
+    for (var skill in data['skills'] ?? []) {
+      skills!.add(Skill.fromMap(skill));
+    }
   }
 
   String? title;
