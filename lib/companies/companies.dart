@@ -2,6 +2,8 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 
+import 'model.dart';
+
 class CompaniesPage extends StatefulWidget {
   const CompaniesPage({super.key, this.companies, this.callback});
 
@@ -30,7 +32,7 @@ class _CompaniesPageState extends State<CompaniesPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(onPressed: () {
-                    showBottomSheet(
+                    showModalBottomSheet(
                       context: context,
                       builder: (context) {
                         return Padding(
@@ -75,7 +77,7 @@ class _CompaniesPageState extends State<CompaniesPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showBottomSheet(
+          showModalBottomSheet(
             context: context,
             builder: (context) {
               return Padding(
@@ -132,6 +134,7 @@ class _AddCompanyState extends State<_AddCompany> {
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         TextFormField(
+          autofocus: true,
           decoration: const InputDecoration(label: Text('Name')),
           initialValue: _name,
           onChanged: (value) {
@@ -209,10 +212,11 @@ class _EditCompanyState extends State<_EditCompany> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Edit $_name',
+          'Edit Company',
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         TextFormField(
+          autofocus: true,
           decoration: const InputDecoration(label: Text('Name')),
           initialValue: _name,
           onChanged: (value) {
@@ -266,18 +270,4 @@ class _EditCompanyState extends State<_EditCompany> {
       ],
     );
   }
-}
-
-class Company {
-  Company({this.name});
-
-  Company.fromMap(Map<String, dynamic> data) {
-    name = data['name'];
-  }
-
-  String? name;
-
-  Map<String, dynamic> toMap() => {
-        'name': name,
-      };
 }

@@ -16,6 +16,11 @@ import 'package:re/experience/experience.dart';
 import 'package:re/profile/profile.dart';
 import 'package:re/skills/skills.dart';
 
+import 'companies/model.dart';
+import 'experience/model.dart';
+import 'profile/model.dart';
+import 'skills/model.dart';
+
 void main() {
   runApp(const App());
 }
@@ -171,8 +176,9 @@ class _AppPageState extends State<AppPage> {
     if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
     dataFile.writeAsStringSync(jsonEncode(_dataMap));
     if (await git.GitDir.isGitDir(dataDir.path)) {
-      _syncRepo();
+      await _syncRepo();
     }
+    await _renderData();
   }
 
   Future<bool> _loadData() async {
@@ -185,24 +191,35 @@ class _AppPageState extends State<AppPage> {
     if (dataFile.existsSync()) {
       setState(() {
         _dataMap = jsonDecode(dataFile.readAsStringSync());
-        _pages = [
-          ProfilePage(
-            profile: _loadProfile(),
-            callback: _saveProfile,
-          ),
-          SkillsPage(
-            skills: _loadSkills(),
-            callback: _saveSkills,
-          ),
-          CompaniesPage(
-            companies: _loadCompanies(),
-            callback: _saveCompanies,
-          ),
-          const ExperiencePage()
-        ];
+        _renderData();
       });
     }
     return true;
+  }
+
+  _renderData() {
+    setState(() {
+      _pages = [
+        ProfilePage(
+          profile: _loadProfile(),
+          callback: _saveProfile,
+        ),
+        SkillsPage(
+          skills: _loadSkills(),
+          callback: _saveSkills,
+        ),
+        CompaniesPage(
+          companies: _loadCompanies(),
+          callback: _saveCompanies,
+        ),
+        ExperiencePage(
+          experiences: _loadExperiences(),
+          skills: _loadSkills(),
+          companies: _loadCompanies(),
+          callback: _saveExperiences,
+        )
+      ];
+    });
   }
 
   _saveProfile(Profile profile) {
@@ -220,7 +237,11 @@ class _AppPageState extends State<AppPage> {
 
   _saveSkills(List<Skill> skills) {
     setState(() {
-      _dataMap['skills'] = skills.map((skill) => skill.toMap()).toList();
+      _dataMap['skills'] = (skills
+            ..sort((a, b) =>
+                a.name!.toLowerCase().compareTo(b.name!.toLowerCase())))
+          .map((skill) => skill.toMap())
+          .toList();
       _saveData();
     });
   }
@@ -237,8 +258,11 @@ class _AppPageState extends State<AppPage> {
 
   _saveCompanies(List<Company> companies) {
     setState(() {
-      _dataMap['companies'] =
-          companies.map((company) => company.toMap()).toList();
+      _dataMap['companies'] = (companies
+            ..sort((a, b) =>
+                a.name!.toLowerCase().compareTo(b.name!.toLowerCase())))
+          .map((company) => company.toMap())
+          .toList();
       _saveData();
     });
   }
@@ -251,6 +275,24 @@ class _AppPageState extends State<AppPage> {
       }
     }
     return companies;
+  }
+
+  _saveExperiences(List<Experience> experiences) {
+    setState(() {
+      var em = experiences.map((e) => e.toMap());
+      _dataMap['experiences'] = em.toList();
+      _saveData();
+    });
+  }
+
+  List<Experience> _loadExperiences() {
+    List<Experience> experiences = [];
+    if (_dataMap['experiences'] != null) {
+      for (Map<String, dynamic> experienceData in _dataMap['experiences']) {
+        experiences.add(Experience.fromMap(experienceData));
+      }
+    }
+    return experiences;
   }
 
   @override
@@ -488,9 +530,12 @@ class _AppPageState extends State<AppPage> {
                       title: TextButton.icon(
                           onPressed: () async {
                             Navigator.of(context).pop();
-                            var message = 'Are you sure that you want to clear all of your data?';
-                            var width = MediaQuery.of(context).size.width/16;
-                            var height = MediaQuery.of(context).size.height/2-(message.length*2);
+                            var message =
+                                'Are you sure that you want to clear all of your data?';
+                            var width = MediaQuery.of(context).size.width / 16;
+                            var height =
+                                MediaQuery.of(context).size.height / 2 -
+                                    (message.length * 2);
                             bool choice = await showDialog(
                               context: context,
                               builder: (context) {

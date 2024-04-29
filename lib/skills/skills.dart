@@ -1,4 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+
+import 'model.dart';
 
 class SkillsPage extends StatefulWidget {
   const SkillsPage({super.key, this.skills, this.callback});
@@ -11,63 +15,72 @@ class SkillsPage extends StatefulWidget {
 }
 
 class _SkillsPageState extends State<SkillsPage> {
-  _SkillsPageState({this.skills});
+  _SkillsPageState({List<Skill>? skills}) : _skills=skills;
 
-  List<Skill>? skills;
+  List<Skill>? _skills;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
         children: [
-          ...?skills?.map((e) {
+          ...?_skills?.map((e) {
             int year = DateTime.timestamp().year;
-            int diff = year-(e.started ?? 0);
+            int diff = year - (e.started ?? 0);
             return ListTile(
-              leading: SizedBox(width: 60, child: Text('$diff ${diff != 1 ? "years" : "year"}',)),
+              leading: SizedBox(
+                  width: 60,
+                  child: Text(
+                    '$diff ${diff != 1 ? "years" : "year"}',
+                  )),
               title: Text(e.name ?? ''),
-              subtitle: LinearProgressIndicator(value: e.level!.toDouble()/10.0,),
+              subtitle: LinearProgressIndicator(
+                value: e.level!.toDouble() / 10.0,
+              ),
               trailing: SizedBox(
                 width: 100,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    IconButton(onPressed: () {
-                      showBottomSheet(
-                        context: context,
-                        builder: (context) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: _EditSkill(
-                              name: e.name!,
-                              started: e.started!,
-                              level: e.level!,
-                              callback: (skill) {
-                                if (skill.name != null && skill.name != '') {
-                                  Navigator.pop(context);
-                                  setState(() {
-                                    var i = skills!.indexOf(e);
-                                    skills![i] = skill;
-                                    if (widget.callback != null) {
-                                      widget.callback!(skills!);
+                    IconButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (context) {
+                              return Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: _EditSkill(
+                                  name: e.name!,
+                                  started: e.started!,
+                                  level: e.level!,
+                                  callback: (skill) {
+                                    if (skill.name != null &&
+                                        skill.name != '') {
+                                      Navigator.pop(context);
+                                      setState(() {
+                                        _skills!.remove(e);
+                                        _skills!.add(skill);
+                                        if (widget.callback != null) {
+                                          widget.callback!(_skills!.toList());
+                                        }
+                                      });
                                     }
-                                  });
-                                }
-                              },
-                              cancel: () {
-                                Navigator.pop(context);
-                              },
-                            ),
+                                  },
+                                  cancel: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              );
+                            },
                           );
                         },
-                      );
-                    }, icon: const Icon(Icons.edit_rounded)),
+                        icon: const Icon(Icons.edit_rounded)),
                     IconButton(
                         onPressed: () {
                           setState(() {
-                            skills!.remove(e);
+                            _skills!.remove(e);
                             if (widget.callback != null) {
-                              widget.callback!(skills!);
+                              widget.callback!(_skills!.toList());
                             }
                           });
                         },
@@ -81,23 +94,25 @@ class _SkillsPageState extends State<SkillsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showBottomSheet(
+          showModalBottomSheet(
             context: context,
             builder: (context) {
               return Padding(
                 padding: const EdgeInsets.all(16),
                 child: _AddSkill(
                   callback: (skill) {
-                    if (skill.name != null && skill.name != '') {
+                    if (_skills != null && _skills!.map((e) => e.name?.toLowerCase()).contains(skill.name?.toLowerCase())) {
                       Navigator.pop(context);
-                      setState(() {
-                        skills ??= [];
-                        skills!.add(skill);
-                        if (widget.callback != null) {
-                          widget.callback!(skills!);
-                        }
-                      });
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${skill.name} already exists')));
+                      return;
                     }
+                    setState(() {
+                      _skills!.add(skill);
+                      if (widget.callback != null) {
+                        widget.callback!(_skills!.toList());
+                      }
+                      Navigator.pop(context);
+                    });
                   },
                   cancel: () {
                     Navigator.pop(context);
@@ -227,25 +242,37 @@ class _AddSkillState extends State<_AddSkill> {
 }
 
 class _EditSkill extends StatefulWidget {
-  const _EditSkill({super.key, required this.name, required this.started, required this.level, this.callback, this.cancel});
+  const _EditSkill(
+      {super.key,
+      required this.name,
+      required this.started,
+      required this.level,
+      this.callback,
+      this.cancel});
 
   final String name;
   final int started;
   final int level;
-  
+
   final Function(Skill skill)? callback;
   final Function()? cancel;
 
   @override
-  State<StatefulWidget> createState() => _EditSkillState(name: name, started: started, level: level);
+  State<StatefulWidget> createState() => _EditSkillState();
 }
 
 class _EditSkillState extends State<_EditSkill> {
-  _EditSkillState({required String name, required int started, required level}) : _name=name, _started=started, _level=level;
-  
-  String _name = '';
-  int _started = DateTime.timestamp().year;
-  int _level = 0;
+  late String _name;
+  late int _started;
+  late int _level;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = widget.name;
+    _started = widget.started;
+    _level = widget.level;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +282,7 @@ class _EditSkillState extends State<_EditSkill> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Add a Skill',
+          'Edit Skill',
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         TextFormField(
@@ -278,9 +305,9 @@ class _EditSkillState extends State<_EditSkill> {
           value: _started,
           items: items
               .map((e) => DropdownMenuItem<int>(
-            value: e,
-            child: Text(e.toString()),
-          ))
+                    value: e,
+                    child: Text(e.toString()),
+                  ))
               .toList(),
           onChanged: (value) {
             setState(() {
@@ -343,27 +370,4 @@ class _EditSkillState extends State<_EditSkill> {
       ],
     );
   }
-}
-
-class Skill {
-  Skill({this.name, this.level, this.levelModifier, this.started});
-
-  Skill.fromMap(Map<String, dynamic> data) {
-    name = data['name'];
-    level = data['level'];
-    levelModifier = data['level_modifier'];
-    started = data['started'];
-  }
-
-  String? name;
-  int? level;
-  int? levelModifier;
-  int? started;
-
-  Map<String, dynamic> toMap() => {
-    'name': name,
-    'level': level,
-    'level_modifier': levelModifier,
-    'started': started,
-  };
 }

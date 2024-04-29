@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'model.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, this.profile, this.callback});
 
@@ -102,42 +104,5 @@ class _ProfilePageState extends State<ProfilePage> {
         )
       ],
     );
-  }
-}
-
-class Profile {
-  Profile();
-
-  String? name;
-  String? address;
-  String? email;
-  String? phone;
-
-  Profile.fromJson(String body) {
-    var data = jsonDecode(body);
-    name = data['name'];
-    address = data['address'];
-    phone = data['phone'];
-    email = data['email'];
-  }
-
-  Profile.fromMap(Map<String, dynamic> body) {
-    name = body['name'];
-    address = body['address'];
-    email = body['email'];
-    phone = body['phone'];
-  }
-
-  @override
-  String toString() {
-    return '$name\n$address\n$email\n$phone';
-  }
-
-  String toJson() {
-    return jsonEncode(toMap());
-  }
-
-  Map<String, dynamic> toMap() {
-    return {"name": name, "address": address, "email": email, "phone": phone};
   }
 }
