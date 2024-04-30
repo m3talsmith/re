@@ -15,6 +15,7 @@ import 'package:re/companies/companies.dart';
 import 'package:re/experience/experience.dart';
 import 'package:re/profile/profile.dart';
 import 'package:re/skills/skills.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'companies/model.dart';
 import 'experience/model.dart';
@@ -82,7 +83,8 @@ class _AppPageState extends State<AppPage> {
         _hasGit = true;
         _loadKeys();
       });
-    } catch (_) {
+    } catch (e) {
+      log('no git: $e');
       setState(() {
         _hasGit = false;
       });
@@ -175,8 +177,10 @@ class _AppPageState extends State<AppPage> {
     var dataFile = File(path.join(dataDir.path, 'data.json'));
     if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
     dataFile.writeAsStringSync(jsonEncode(_dataMap));
-    if (await git.GitDir.isGitDir(dataDir.path)) {
-      await _syncRepo();
+    if (Platform.isWindows || Platform.isLinux) {
+      if (await git.GitDir.isGitDir(dataDir.path)) {
+        await _syncRepo();
+      }
     }
     await _renderData();
   }
@@ -346,7 +350,11 @@ class _AppPageState extends State<AppPage> {
               endDrawer: Drawer(
                 child: Column(
                   children: [
-                    if (Platform.isIOS) Padding(padding: const EdgeInsets.only(top: 50), child: Container(),),
+                    if (Platform.isIOS)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 50),
+                        child: Container(),
+                      ),
                     ListTile(
                       title: TextButton.icon(
                         onPressed: () async {
@@ -376,13 +384,29 @@ class _AppPageState extends State<AppPage> {
                     ListTile(
                       title: TextButton.icon(
                         onPressed: () async {
-                          var exportPath = await FilePicker.platform.saveFile(
-                              dialogTitle: 'Export data',
-                              fileName: 're.export.json');
-                          if (exportPath != null) {
-                            File(exportPath)
-                                .writeAsStringSync(jsonEncode(_dataMap));
+                          if (Platform.isLinux ||
+                              Platform.isWindows ||
+                              Platform.isAndroid
+                          ) {
+                            var exportPath = await FilePicker.platform.saveFile(
+                                dialogTitle: 'Export data',
+                                fileName: 're.export.json');
+                            if (exportPath != null) {
+                              File(exportPath)
+                                  .writeAsStringSync(jsonEncode(_dataMap));
+                            }
+                            return;
                           }
+                          var size = MediaQuery.of(context).size;
+                          await Share.shareXFiles(
+                            [
+                              XFile.fromData(
+                                Uint8List.fromList(
+                                    jsonEncode(_dataMap).codeUnits),
+                              ),
+                            ],
+                            sharePositionOrigin: Rect.fromLTWH(0, 0, size.width/2-200, size.height),
+                          );
                         },
                         icon: const Icon(Icons.sim_card_download_rounded),
                         label: const Text('Export'),
@@ -533,8 +557,8 @@ class _AppPageState extends State<AppPage> {
                         ),
                       ),
                     Expanded(
-                      child: Container(),
                       flex: 3,
+                      child: Container(),
                     ),
                     ListTile(
                       title: TextButton.icon(
@@ -545,7 +569,7 @@ class _AppPageState extends State<AppPage> {
                             var width = MediaQuery.of(context).size.width / 16;
                             var height =
                                 MediaQuery.of(context).size.height / 2 -
-                                    (message.length * 2);
+                                    (message.length * 3);
                             bool choice = await showDialog(
                               context: context,
                               builder: (context) {
