@@ -384,29 +384,26 @@ class _AppPageState extends State<AppPage> {
                     ListTile(
                       title: TextButton.icon(
                         onPressed: () async {
-                          if (Platform.isLinux ||
-                              Platform.isWindows ||
-                              Platform.isAndroid
-                          ) {
-                            var exportPath = await FilePicker.platform.saveFile(
-                                dialogTitle: 'Export data',
-                                fileName: 're.export.json');
-                            if (exportPath != null) {
-                              File(exportPath)
-                                  .writeAsStringSync(jsonEncode(_dataMap));
-                            }
+                          if (Platform.isIOS || Platform.isMacOS){
+                            var size = MediaQuery.of(context).size;
+                            await Share.shareXFiles(
+                              [
+                                XFile.fromData(
+                                  Uint8List.fromList(
+                                      jsonEncode(_dataMap).codeUnits),
+                                ),
+                              ],
+                              sharePositionOrigin: Rect.fromLTWH(0, 0, size.width/2-200, size.height),
+                            );
                             return;
                           }
-                          var size = MediaQuery.of(context).size;
-                          await Share.shareXFiles(
-                            [
-                              XFile.fromData(
-                                Uint8List.fromList(
-                                    jsonEncode(_dataMap).codeUnits),
-                              ),
-                            ],
-                            sharePositionOrigin: Rect.fromLTWH(0, 0, size.width/2-200, size.height),
-                          );
+                          var exportPath = await FilePicker.platform.saveFile(
+                              dialogTitle: 'Export data',
+                              fileName: 're.export.json');
+                          if (exportPath != null) {
+                            File(exportPath)
+                                .writeAsStringSync(jsonEncode(_dataMap));
+                          }
                         },
                         icon: const Icon(Icons.sim_card_download_rounded),
                         label: const Text('Export'),
