@@ -100,6 +100,11 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: _saveProfile,
             icon: const Icon(Icons.save_alt_rounded),
             label: const Text('Save Profile'),
+            style: ButtonStyle(
+              backgroundColor: MaterialStatePropertyAll(Theme.of(context).primaryColor),
+              foregroundColor: MaterialStatePropertyAll(Theme.of(context).canvasColor),
+              iconColor: MaterialStatePropertyAll(Theme.of(context).canvasColor)
+            ),
           ),
         )
       ],
