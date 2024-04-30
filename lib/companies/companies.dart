@@ -24,51 +24,59 @@ class _CompaniesPageState extends State<CompaniesPage> {
     return Scaffold(
       body: ListView(
         children: [
-          ...?companies?.map((e) => ListTile(
-            title: Text(e.name ?? ''),
-            trailing: SizedBox(
-              width: 100,
+          ...?companies?.map((e) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  IconButton(onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      builder: (context) {
-                        return Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: _EditCompany(
-                            name: e.name!,
-                            callback: (company) {
-                              if (company.name != null && company.name != '') {
-                                Navigator.pop(context);
-                                setState(() {
-                                  var i = companies!.indexOf(e);
-                                  companies![i] = company;
-                                  if (widget.callback != null) {
-                                    widget.callback!(companies!);
-                                  }
-                                });
-                              }
+                  Text(e.name ?? ''),
+                  Expanded(child: Container()),
+                  SizedBox(
+                    width: 100,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (context) {
+                              return Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: _EditCompany(
+                                  name: e.name!,
+                                  callback: (company) {
+                                    if (company.name != null && company.name != '') {
+                                      Navigator.pop(context);
+                                      setState(() {
+                                        var i = companies!.indexOf(e);
+                                        companies![i] = company;
+                                        if (widget.callback != null) {
+                                          widget.callback!(companies!);
+                                        }
+                                      });
+                                    }
+                                  },
+                                  cancel: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              );
                             },
-                            cancel: () {
-                              Navigator.pop(context);
+                          );
+                        }, icon: const Icon(Icons.edit_rounded)),
+                        IconButton(
+                            onPressed: () {
+                              setState(() {
+                                companies!.remove(e);
+                                if (widget.callback != null) {
+                                  widget.callback!(companies!);
+                                }
+                              });
                             },
-                          ),
-                        );
-                      },
-                    );
-                  }, icon: const Icon(Icons.edit_rounded)),
-                  IconButton(
-                      onPressed: () {
-                        setState(() {
-                          companies!.remove(e);
-                          if (widget.callback != null) {
-                            widget.callback!(companies!);
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.delete_forever_rounded)),
+                            icon: const Icon(Icons.delete_forever_rounded)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -65,6 +65,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
       body: ListView(
         children: [
           ..._experiences.map((e) {
+            var size = MediaQuery.of(context).size;
             var yearsStarted = e.roles?.map((e) => e.started?.year).nonNulls ??
                 [DateTime.timestamp().year];
             var yearsEnded = e.roles?.map((e) => e.ended?.year);
@@ -106,83 +107,97 @@ class _ExperiencePageState extends State<ExperiencePage> {
                 [];
             var subtitle = Column(
               children: [
-                Wrap(
-                  children: roleNames
-                      .map((e) => Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: Chip(
-                              label: Text(
-                                e,
-                                style: Theme.of(context).textTheme.labelSmall,
+                SizedBox(
+                  width: size.width/2,
+                  child: Wrap(
+                    children: roleNames
+                        .map((e) => Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Chip(
+                                label: Text(
+                                  e,
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                                color: MaterialStatePropertyAll(
+                                    Theme.of(context).primaryColor.withAlpha(20)),
                               ),
-                              color: MaterialStatePropertyAll(
-                                  Theme.of(context).primaryColor.withAlpha(20)),
-                            ),
-                          ))
-                      .toList(),
+                            ))
+                        .toList(),
+                  ),
                 ),
                 const Padding(padding: EdgeInsets.all(4.0)),
-                Wrap(
-                  children: skillNames
-                      .map((e) => Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: Chip(
-                              label: Text(
-                                e,
-                                style: Theme.of(context).textTheme.labelSmall,
+                SizedBox(
+                  width: size.width/2,
+                  child: Wrap(
+                    children: skillNames
+                        .map((e) => Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Chip(
+                                label: Text(
+                                  e,
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                                color: MaterialStatePropertyAll(
+                                    Theme.of(context).primaryColor.withAlpha(60)),
                               ),
-                              color: MaterialStatePropertyAll(
-                                  Theme.of(context).primaryColor.withAlpha(60)),
-                            ),
-                          ))
-                      .toList(),
+                            ))
+                        .toList(),
+                  ),
                 )
               ],
             );
-            return ListTile(
-              title: title,
-              subtitle: subtitle,
-              trailing: SizedBox(
-                width: 100,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
                   children: [
-                    IconButton(
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            builder: (context) {
-                              return Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: _EditExperience(
-                                  companies: widget.companies,
-                                  skills: widget.skills,
-                                  cancel: () => Navigator.of(context).pop(),
-                                  callback: (experience) {
-                                    setState(() {
-                                      _experiences.remove(e);
-                                      _experiences.add(experience);
-                                      Navigator.of(context).pop();
-                                    });
-                                  },
-                                  company: e.company!,
-                                  roles: e.roles ?? [],
-                                ),
+                    Row(
+                      children: [
+                        title,
+                        Expanded(child: Container()),
+                        IconButton(
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (context) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: _EditExperience(
+                                      companies: widget.companies,
+                                      skills: widget.skills,
+                                      cancel: () => Navigator.of(context).pop(),
+                                      callback: (experience) {
+                                        setState(() {
+                                          _experiences.remove(e);
+                                          _experiences.add(experience);
+                                          Navigator.of(context).pop();
+                                        });
+                                      },
+                                      company: e.company!,
+                                      roles: e.roles ?? [],
+                                    ),
+                                  );
+                                },
                               );
                             },
-                          );
-                        },
-                        icon: const Icon(Icons.edit_rounded)),
-                    IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _experiences.remove(e);
-                            if (widget.callback != null) {
-                              widget.callback!(_experiences);
-                            }
-                          });
-                        },
-                        icon: const Icon(Icons.delete_forever_rounded))
+                            icon: const Icon(Icons.edit_rounded)),
+                        IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _experiences.remove(e);
+                                if (widget.callback != null) {
+                                  widget.callback!(_experiences);
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.delete_forever_rounded))
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        subtitle
+                      ],
+                    )
                   ],
                 ),
               ),
