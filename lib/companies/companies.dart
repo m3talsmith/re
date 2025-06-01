@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'form.dart';
 import 'model.dart';
 
 class CompaniesPage extends StatefulWidget {
@@ -45,8 +46,8 @@ class _CompaniesPageState extends State<CompaniesPage> {
                                     builder: (context) {
                                       return Padding(
                                         padding: const EdgeInsets.all(16),
-                                        child: _EditCompany(
-                                          name: e.name!,
+                                        child: CompanyForm(
+                                          company: e,
                                           callback: (company) {
                                             if (company.name != null &&
                                                 company.name != '') {
@@ -95,7 +96,7 @@ class _CompaniesPageState extends State<CompaniesPage> {
             builder: (context) {
               return Padding(
                 padding: const EdgeInsets.all(16),
-                child: _AddCompany(
+                child: CompanyForm(
                   callback: (company) {
                     if (company.name != null && company.name != '') {
                       Navigator.pop(context);
@@ -118,157 +119,6 @@ class _CompaniesPageState extends State<CompaniesPage> {
         },
         child: const Icon(Icons.add_rounded),
       ),
-    );
-  }
-}
-
-class _AddCompany extends StatefulWidget {
-  const _AddCompany({this.callback, this.cancel});
-
-  final Function(Company company)? callback;
-  final Function()? cancel;
-
-  @override
-  State<StatefulWidget> createState() => _AddCompanyState();
-}
-
-class _AddCompanyState extends State<_AddCompany> {
-  _AddCompanyState({String name = ''}) : _name = name;
-
-  String _name = "";
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Add a Company',
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        TextFormField(
-          autofocus: true,
-          decoration: const InputDecoration(label: Text('Name')),
-          initialValue: _name,
-          onChanged: (value) {
-            setState(() {
-              _name = value;
-            });
-          },
-          onFieldSubmitted: (value) {
-            setState(() {
-              _name = value;
-              if (widget.callback != null) {
-                widget.callback!(Company(
-                  name: _name,
-                ));
-              }
-            });
-          },
-        ),
-        const Divider(),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: () {
-                if (widget.cancel != null) widget.cancel!();
-              },
-              icon: const Icon(Icons.cancel_rounded),
-              label: const Text('Cancel'),
-            ),
-            Expanded(child: Container()),
-            FilledButton.icon(
-              onPressed: () {
-                if (widget.callback != null) {
-                  widget.callback!(Company(
-                    name: _name,
-                  ));
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Add'),
-            )
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _EditCompany extends StatefulWidget {
-  const _EditCompany({required this.name, this.callback, this.cancel});
-
-  final String name;
-  final Function(Company company)? callback;
-  final Function()? cancel;
-
-  @override
-  State<StatefulWidget> createState() => _EditCompanyState();
-}
-
-class _EditCompanyState extends State<_EditCompany> {
-  String _name = "";
-
-  @override
-  void initState() {
-    super.initState();
-    _name = widget.name;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Edit Company',
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        TextFormField(
-          autofocus: true,
-          decoration: const InputDecoration(label: Text('Name')),
-          initialValue: _name,
-          onChanged: (value) {
-            setState(() {
-              _name = value;
-            });
-          },
-          onFieldSubmitted: (value) {
-            setState(() {
-              _name = value;
-              if (widget.callback != null) {
-                widget.callback!(Company(
-                  name: _name,
-                ));
-              }
-            });
-          },
-        ),
-        const Divider(),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: () {
-                if (widget.cancel != null) widget.cancel!();
-              },
-              icon: const Icon(Icons.cancel_rounded),
-              label: const Text('Cancel'),
-            ),
-            Expanded(child: Container()),
-            FilledButton.icon(
-              onPressed: () {
-                if (widget.callback != null) {
-                  widget.callback!(Company(
-                    name: _name,
-                  ));
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Update'),
-            )
-          ],
-        ),
-      ],
     );
   }
 }
