@@ -95,7 +95,6 @@ class _ExperiencePageState extends State<ExperiencePage> {
                     })
                     .toList()
                     .reduce((value, element) {
-                      value ??= [];
                       for (var v in element) {
                         value.add(v);
                       }
@@ -105,7 +104,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
             var subtitle = Column(
               children: [
                 SizedBox(
-                  width: size.width/2,
+                  width: size.width / 2,
                   child: Wrap(
                     children: roleNames
                         .map((e) => Padding(
@@ -115,8 +114,9 @@ class _ExperiencePageState extends State<ExperiencePage> {
                                   e,
                                   style: Theme.of(context).textTheme.labelSmall,
                                 ),
-                                color: MaterialStatePropertyAll(
-                                    Theme.of(context).primaryColor.withAlpha(20)),
+                                color: WidgetStatePropertyAll(Theme.of(context)
+                                    .primaryColor
+                                    .withAlpha(20)),
                               ),
                             ))
                         .toList(),
@@ -124,7 +124,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
                 ),
                 const Padding(padding: EdgeInsets.all(4.0)),
                 SizedBox(
-                  width: size.width/2,
+                  width: size.width / 2,
                   child: Wrap(
                     children: skillNames
                         .map((e) => Padding(
@@ -134,8 +134,9 @@ class _ExperiencePageState extends State<ExperiencePage> {
                                   e,
                                   style: Theme.of(context).textTheme.labelSmall,
                                 ),
-                                color: MaterialStatePropertyAll(
-                                    Theme.of(context).primaryColor.withAlpha(60)),
+                                color: WidgetStatePropertyAll(Theme.of(context)
+                                    .primaryColor
+                                    .withAlpha(60)),
                               ),
                             ))
                         .toList(),
@@ -191,9 +192,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
                       ],
                     ),
                     Row(
-                      children: [
-                        subtitle
-                      ],
+                      children: [subtitle],
                     )
                   ],
                 ),
@@ -208,7 +207,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
 
 class _AddExperience extends StatefulWidget {
   const _AddExperience(
-      {super.key, this.callback, this.cancel, this.companies, this.skills});
+      {this.callback, this.cancel, this.companies, this.skills});
 
   final Function(Experience experience)? callback;
   final Function()? cancel;
@@ -222,7 +221,7 @@ class _AddExperience extends StatefulWidget {
 
 class _AddExperienceState extends State<_AddExperience> {
   Company? _company;
-  List<Role> _roles = [];
+  final List<Role> _roles = [];
 
   bool _addingRole = false;
   bool _addingSkill = false;
@@ -232,7 +231,7 @@ class _AddExperienceState extends State<_AddExperience> {
   DateTime? _roleEnded;
   Set<Skill>? _roleSkills;
 
-  _clearRole() {
+  void _clearRole() {
     setState(() {
       _roleTitle = null;
       _roleSummary = null;
@@ -243,14 +242,14 @@ class _AddExperienceState extends State<_AddExperience> {
     });
   }
 
-  _initRole() {
+  void _initRole() {
     setState(() {
       _addingRole = true;
       _clearRole();
     });
   }
 
-  _addRole() {
+  void _addRole() {
     Role role = Role()
       ..title = _roleTitle
       ..summary = _roleSummary
@@ -298,175 +297,173 @@ class _AddExperienceState extends State<_AddExperience> {
           ),
           ..._roles.map((e) => ListTile(title: Text(e.title!))),
           if (_addingRole)
-            Container(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'New Role',
-                    style: Theme.of(context).textTheme.headlineSmall,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'New Role',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(label: Text('Title')),
+                  onChanged: (value) {
+                    setState(() {
+                      _roleTitle = value;
+                    });
+                  },
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    label: Text('Summary'),
                   ),
-                  TextFormField(
-                    decoration: const InputDecoration(label: Text('Title')),
-                    onChanged: (value) {
-                      setState(() {
-                        _roleTitle = value;
-                      });
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      label: Text('Summary'),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _roleSummary = value;
-                      });
-                    },
-                  ),
-                  Wrap(
-                    children: _roleSkills?.map((e) {
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Chip(
-                              label: Text(e.name!),
-                              deleteIcon: const Icon(Icons.remove_rounded),
-                              onDeleted: () {
-                                setState(() {
-                                  _roleSkills?.remove(e);
-                                });
-                              },
-                            ),
-                          );
-                        }).toList() ??
-                        [],
-                  ),
-                  if (_addingSkill)
-                    DropdownButtonFormField(
-                      items: widget.skills
-                          ?.map((e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e.name!),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _roleSkills ??= <Skill>{};
-                          _roleSkills?.add(value!);
-                          _addingSkill = false;
-                        });
-                      },
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                            onPressed: () {
+                  onChanged: (value) {
+                    setState(() {
+                      _roleSummary = value;
+                    });
+                  },
+                ),
+                Wrap(
+                  children: _roleSkills?.map((e) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Chip(
+                            label: Text(e.name!),
+                            deleteIcon: const Icon(Icons.remove_rounded),
+                            onDeleted: () {
                               setState(() {
-                                _addingSkill = true;
+                                _roleSkills?.remove(e);
                               });
                             },
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add Skill'))
-                      ],
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).shadowColor.withAlpha(60),
-                        width: 2,
-                      ),
-                    )),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Started',
-                            style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          Expanded(child: Container()),
-                          Text(_roleStarted?.year.toString() ?? ''),
-                          IconButton(
-                              onPressed: () async {
-                                var date = await showDatePicker(
-                                    context: context,
-                                    firstDate: DateTime(
-                                        DateTime.timestamp().year - 50),
-                                    lastDate: DateTime.timestamp());
-                                setState(() {
-                                  _roleStarted = date;
-                                });
-                              },
-                              icon: const Icon(Icons.calendar_month_rounded))
-                        ],
-                      ),
-                    ),
+                        );
+                      }).toList() ??
+                      [],
+                ),
+                if (_addingSkill)
+                  DropdownButtonFormField(
+                    items: widget.skills
+                        ?.map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e.name!),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _roleSkills ??= <Skill>{};
+                        _roleSkills?.add(value!);
+                        _addingSkill = false;
+                      });
+                    },
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).shadowColor.withAlpha(60),
-                        width: 2,
-                      ),
-                    )),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Ended',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          Expanded(child: Container()),
-                          Text(_roleEnded?.year.toString() ?? ''),
-                          IconButton(
-                              onPressed: () async {
-                                var date = await showDatePicker(
-                                    context: context,
-                                    firstDate: DateTime(
-                                        DateTime.timestamp().year - 50),
-                                    lastDate: DateTime.timestamp());
-                                setState(() {
-                                  _roleEnded = date;
-                                });
-                              },
-                              icon: const Icon(Icons.calendar_month_rounded))
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton.icon(
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
                           onPressed: () {
                             setState(() {
-                              _addRole();
-                              _addingRole = false;
+                              _addingSkill = true;
                             });
                           },
                           icon: const Icon(Icons.add_rounded),
-                          label: const Text('Add Role'),
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStatePropertyAll(
-                                Theme.of(context).primaryColor),
-                            foregroundColor: MaterialStatePropertyAll(
-                                Theme.of(context).canvasColor),
-                          ),
-                        )
+                          label: const Text('Add Skill'))
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                      border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).shadowColor.withAlpha(60),
+                      width: 2,
+                    ),
+                  )),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Started',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Expanded(child: Container()),
+                        Text(_roleStarted?.year.toString() ?? ''),
+                        IconButton(
+                            onPressed: () async {
+                              var date = await showDatePicker(
+                                  context: context,
+                                  firstDate:
+                                      DateTime(DateTime.timestamp().year - 50),
+                                  lastDate: DateTime.timestamp());
+                              setState(() {
+                                _roleStarted = date;
+                              });
+                            },
+                            icon: const Icon(Icons.calendar_month_rounded))
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                      border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).shadowColor.withAlpha(60),
+                      width: 2,
+                    ),
+                  )),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Ended',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Expanded(child: Container()),
+                        Text(_roleEnded?.year.toString() ?? ''),
+                        IconButton(
+                            onPressed: () async {
+                              var date = await showDatePicker(
+                                  context: context,
+                                  firstDate:
+                                      DateTime(DateTime.timestamp().year - 50),
+                                  lastDate: DateTime.timestamp());
+                              setState(() {
+                                _roleEnded = date;
+                              });
+                            },
+                            icon: const Icon(Icons.calendar_month_rounded))
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _addRole();
+                            _addingRole = false;
+                          });
+                        },
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Add Role'),
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).primaryColor),
+                          foregroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).canvasColor),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ],
             ),
           if (!_addingRole)
             Row(
@@ -534,9 +531,9 @@ class _AddExperienceState extends State<_AddExperience> {
                 label: const Text('Add Experience'),
                 style: ButtonStyle(
                   backgroundColor:
-                      MaterialStatePropertyAll(Theme.of(context).primaryColor),
+                      WidgetStatePropertyAll(Theme.of(context).primaryColor),
                   foregroundColor:
-                      MaterialStatePropertyAll(Theme.of(context).canvasColor),
+                      WidgetStatePropertyAll(Theme.of(context).canvasColor),
                 ),
               )
             ],
@@ -549,7 +546,6 @@ class _AddExperienceState extends State<_AddExperience> {
 
 class _EditExperience extends StatefulWidget {
   const _EditExperience({
-    super.key,
     this.callback,
     this.cancel,
     this.companies,
@@ -568,16 +564,19 @@ class _EditExperience extends StatefulWidget {
   final List<Role> roles;
 
   @override
-  State<StatefulWidget> createState() => _EditExperienceState(company: company, roles: roles);
+  State<StatefulWidget> createState() => _EditExperienceState();
 }
 
 class _EditExperienceState extends State<_EditExperience> {
-  _EditExperienceState({required Company company, required List<Role> roles})
-      : _company = company,
-        _roles = roles;
+  late Company _company;
+  late final List<Role> _roles;
 
-  Company _company;
-  List<Role> _roles;
+  @override
+  void initState() {
+    super.initState();
+    _company = widget.company;
+    _roles = widget.roles;
+  }
 
   bool _addingRole = false;
   bool _addingSkill = false;
@@ -587,7 +586,7 @@ class _EditExperienceState extends State<_EditExperience> {
   DateTime? _roleEnded;
   Set<Skill>? _roleSkills;
 
-  _clearRole() {
+  void _clearRole() {
     setState(() {
       _roleTitle = null;
       _roleSummary = null;
@@ -598,14 +597,14 @@ class _EditExperienceState extends State<_EditExperience> {
     });
   }
 
-  _initRole() {
+  void _initRole() {
     setState(() {
       _addingRole = true;
       _clearRole();
     });
   }
 
-  _addRole() {
+  void _addRole() {
     Role role = Role()
       ..title = _roleTitle
       ..summary = _roleSummary
@@ -654,175 +653,173 @@ class _EditExperienceState extends State<_EditExperience> {
           ),
           ..._roles.map((e) => ListTile(title: Text(e.title!))),
           if (_addingRole)
-            Container(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'New Role',
-                    style: Theme.of(context).textTheme.headlineSmall,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'New Role',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(label: Text('Title')),
+                  onChanged: (value) {
+                    setState(() {
+                      _roleTitle = value;
+                    });
+                  },
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    label: Text('Summary'),
                   ),
-                  TextFormField(
-                    decoration: const InputDecoration(label: Text('Title')),
-                    onChanged: (value) {
-                      setState(() {
-                        _roleTitle = value;
-                      });
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      label: Text('Summary'),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _roleSummary = value;
-                      });
-                    },
-                  ),
-                  Wrap(
-                    children: _roleSkills?.map((e) {
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Chip(
-                              label: Text(e.name!),
-                              deleteIcon: const Icon(Icons.remove_rounded),
-                              onDeleted: () {
-                                setState(() {
-                                  _roleSkills?.remove(e);
-                                });
-                              },
-                            ),
-                          );
-                        }).toList() ??
-                        [],
-                  ),
-                  if (_addingSkill)
-                    DropdownButtonFormField(
-                      items: widget.skills
-                          ?.map((e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e.name!),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _roleSkills ??= <Skill>{};
-                          _roleSkills?.add(value!);
-                          _addingSkill = false;
-                        });
-                      },
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                            onPressed: () {
+                  onChanged: (value) {
+                    setState(() {
+                      _roleSummary = value;
+                    });
+                  },
+                ),
+                Wrap(
+                  children: _roleSkills?.map((e) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Chip(
+                            label: Text(e.name!),
+                            deleteIcon: const Icon(Icons.remove_rounded),
+                            onDeleted: () {
                               setState(() {
-                                _addingSkill = true;
+                                _roleSkills?.remove(e);
                               });
                             },
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add Skill'))
-                      ],
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).shadowColor.withAlpha(60),
-                        width: 2,
-                      ),
-                    )),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Started',
-                            style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          Expanded(child: Container()),
-                          Text(_roleStarted?.year.toString() ?? ''),
-                          IconButton(
-                              onPressed: () async {
-                                var date = await showDatePicker(
-                                    context: context,
-                                    firstDate: DateTime(
-                                        DateTime.timestamp().year - 50),
-                                    lastDate: DateTime.timestamp());
-                                setState(() {
-                                  _roleStarted = date;
-                                });
-                              },
-                              icon: const Icon(Icons.calendar_month_rounded))
-                        ],
-                      ),
-                    ),
+                        );
+                      }).toList() ??
+                      [],
+                ),
+                if (_addingSkill)
+                  DropdownButtonFormField(
+                    items: widget.skills
+                        ?.map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e.name!),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _roleSkills ??= <Skill>{};
+                        _roleSkills?.add(value!);
+                        _addingSkill = false;
+                      });
+                    },
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).shadowColor.withAlpha(60),
-                        width: 2,
-                      ),
-                    )),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Ended',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          Expanded(child: Container()),
-                          Text(_roleEnded?.year.toString() ?? ''),
-                          IconButton(
-                              onPressed: () async {
-                                var date = await showDatePicker(
-                                    context: context,
-                                    firstDate: DateTime(
-                                        DateTime.timestamp().year - 50),
-                                    lastDate: DateTime.timestamp());
-                                setState(() {
-                                  _roleEnded = date;
-                                });
-                              },
-                              icon: const Icon(Icons.calendar_month_rounded))
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton.icon(
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
                           onPressed: () {
                             setState(() {
-                              _addRole();
-                              _addingRole = false;
+                              _addingSkill = true;
                             });
                           },
                           icon: const Icon(Icons.add_rounded),
-                          label: const Text('Add Role'),
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStatePropertyAll(
-                                Theme.of(context).primaryColor),
-                            foregroundColor: MaterialStatePropertyAll(
-                                Theme.of(context).canvasColor),
-                          ),
-                        )
+                          label: const Text('Add Skill'))
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                      border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).shadowColor.withAlpha(60),
+                      width: 2,
+                    ),
+                  )),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Started',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Expanded(child: Container()),
+                        Text(_roleStarted?.year.toString() ?? ''),
+                        IconButton(
+                            onPressed: () async {
+                              var date = await showDatePicker(
+                                  context: context,
+                                  firstDate:
+                                      DateTime(DateTime.timestamp().year - 50),
+                                  lastDate: DateTime.timestamp());
+                              setState(() {
+                                _roleStarted = date;
+                              });
+                            },
+                            icon: const Icon(Icons.calendar_month_rounded))
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                      border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).shadowColor.withAlpha(60),
+                      width: 2,
+                    ),
+                  )),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Ended',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Expanded(child: Container()),
+                        Text(_roleEnded?.year.toString() ?? ''),
+                        IconButton(
+                            onPressed: () async {
+                              var date = await showDatePicker(
+                                  context: context,
+                                  firstDate:
+                                      DateTime(DateTime.timestamp().year - 50),
+                                  lastDate: DateTime.timestamp());
+                              setState(() {
+                                _roleEnded = date;
+                              });
+                            },
+                            icon: const Icon(Icons.calendar_month_rounded))
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _addRole();
+                            _addingRole = false;
+                          });
+                        },
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Add Role'),
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).primaryColor),
+                          foregroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).canvasColor),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ],
             ),
           if (!_addingRole)
             Row(
@@ -887,9 +884,9 @@ class _EditExperienceState extends State<_EditExperience> {
                 label: const Text('Update'),
                 style: ButtonStyle(
                   backgroundColor:
-                      MaterialStatePropertyAll(Theme.of(context).primaryColor),
+                      WidgetStatePropertyAll(Theme.of(context).primaryColor),
                   foregroundColor:
-                      MaterialStatePropertyAll(Theme.of(context).canvasColor),
+                      WidgetStatePropertyAll(Theme.of(context).canvasColor),
                 ),
               )
             ],
