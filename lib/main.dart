@@ -11,16 +11,16 @@ import 'package:file_picker/file_picker.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:openssh_ed25519/openssh_ed25519.dart';
 import 'package:git/git.dart' as git;
-import 'package:re/companies/companies.dart';
-import 'package:re/experience/experience.dart';
-import 'package:re/profile/profile.dart';
-import 'package:re/skills/skills.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'companies/model.dart';
 import 'experience/model.dart';
 import 'profile/model.dart';
 import 'skills/model.dart';
+import 'companies/companies.dart';
+import 'experience/experience.dart';
+import 'profile/profile.dart';
+import 'skills/skills.dart';
 
 void main() {
   runApp(const App());
@@ -384,7 +384,7 @@ class _AppPageState extends State<AppPage> {
                     ListTile(
                       title: TextButton.icon(
                         onPressed: () async {
-                          if (Platform.isIOS || Platform.isMacOS){
+                          if (Platform.isIOS || Platform.isMacOS) {
                             var size = MediaQuery.of(context).size;
                             await Share.shareXFiles(
                               [
@@ -393,7 +393,8 @@ class _AppPageState extends State<AppPage> {
                                       jsonEncode(_dataMap).codeUnits),
                                 ),
                               ],
-                              sharePositionOrigin: Rect.fromLTWH(0, 0, size.width/2-200, size.height),
+                              sharePositionOrigin: Rect.fromLTWH(
+                                  0, 0, size.width / 2 - 200, size.height),
                             );
                             return;
                           }

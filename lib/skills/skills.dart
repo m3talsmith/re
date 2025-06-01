@@ -1,7 +1,6 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 
+import 'form.dart';
 import 'model.dart';
 
 class SkillsPage extends StatefulWidget {
@@ -15,7 +14,7 @@ class SkillsPage extends StatefulWidget {
 }
 
 class _SkillsPageState extends State<SkillsPage> {
-  _SkillsPageState({List<Skill>? skills}) : _skills=skills;
+  _SkillsPageState({List<Skill>? skills}) : _skills = skills;
 
   List<Skill>? _skills;
 
@@ -49,10 +48,8 @@ class _SkillsPageState extends State<SkillsPage> {
                             builder: (context) {
                               return Padding(
                                 padding: const EdgeInsets.all(16),
-                                child: _EditSkill(
-                                  name: e.name!,
-                                  started: e.started!,
-                                  level: e.level!,
+                                child: SkillForm(
+                                  skill: e,
                                   callback: (skill) {
                                     if (skill.name != null &&
                                         skill.name != '') {
@@ -99,11 +96,15 @@ class _SkillsPageState extends State<SkillsPage> {
             builder: (context) {
               return Padding(
                 padding: const EdgeInsets.all(16),
-                child: _AddSkill(
+                child: SkillForm(
                   callback: (skill) {
-                    if (_skills != null && _skills!.map((e) => e.name?.toLowerCase()).contains(skill.name?.toLowerCase())) {
+                    if (_skills != null &&
+                        _skills!
+                            .map((e) => e.name?.toLowerCase())
+                            .contains(skill.name?.toLowerCase())) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${skill.name} already exists')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('${skill.name} already exists')));
                       return;
                     }
                     setState(() {
@@ -124,250 +125,6 @@ class _SkillsPageState extends State<SkillsPage> {
         },
         child: const Icon(Icons.add_rounded),
       ),
-    );
-  }
-}
-
-class _AddSkill extends StatefulWidget {
-  const _AddSkill({super.key, this.callback, this.cancel});
-
-  final Function(Skill skill)? callback;
-  final Function()? cancel;
-
-  @override
-  State<StatefulWidget> createState() => _AddSkillState();
-}
-
-class _AddSkillState extends State<_AddSkill> {
-  String _name = "";
-  int _started = DateTime.timestamp().year;
-  int _level = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    var year = DateTime.timestamp().year;
-    var items = List.generate(50, (i) => year - i);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Add a Skill',
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        TextFormField(
-          decoration: const InputDecoration(label: Text('Name')),
-          initialValue: _name,
-          onChanged: (value) {
-            setState(() {
-              _name = value;
-            });
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            'Used Since',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        DropdownButtonFormField<int>(
-          value: _started,
-          items: items
-              .map((e) => DropdownMenuItem<int>(
-                    value: e,
-                    child: Text(e.toString()),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-              _started = value!;
-            });
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            'Comfort Level',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        Slider(
-          min: 0,
-          max: 10,
-          value: _level.toDouble(),
-          onChanged: (value) {
-            setState(() {
-              _level = value.toInt();
-            });
-          },
-        ),
-        const Divider(),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: () {
-                if (widget.cancel != null) widget.cancel!();
-              },
-              icon: const Icon(Icons.cancel_rounded),
-              label: const Text('Cancel'),
-            ),
-            Expanded(child: Container()),
-            ElevatedButton.icon(
-              onPressed: () {
-                if (widget.callback != null) {
-                  widget.callback!(Skill(
-                    name: _name,
-                    level: _level,
-                    levelModifier: 0,
-                    started: _started,
-                  ));
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Add'),
-              style: ButtonStyle(
-                backgroundColor: MaterialStatePropertyAll(
-                  Theme.of(context).primaryColor,
-                ),
-                foregroundColor: MaterialStatePropertyAll(
-                  Theme.of(context).canvasColor,
-                ),
-              ),
-            )
-          ],
-        )
-      ],
-    );
-  }
-}
-
-class _EditSkill extends StatefulWidget {
-  const _EditSkill(
-      {super.key,
-      required this.name,
-      required this.started,
-      required this.level,
-      this.callback,
-      this.cancel});
-
-  final String name;
-  final int started;
-  final int level;
-
-  final Function(Skill skill)? callback;
-  final Function()? cancel;
-
-  @override
-  State<StatefulWidget> createState() => _EditSkillState();
-}
-
-class _EditSkillState extends State<_EditSkill> {
-  late String _name;
-  late int _started;
-  late int _level;
-
-  @override
-  void initState() {
-    super.initState();
-    _name = widget.name;
-    _started = widget.started;
-    _level = widget.level;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var year = DateTime.timestamp().year;
-    var items = List.generate(50, (i) => year - i);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Edit Skill',
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        TextFormField(
-          decoration: const InputDecoration(label: Text('Name')),
-          initialValue: _name,
-          onChanged: (value) {
-            setState(() {
-              _name = value;
-            });
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            'Used Since',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        DropdownButtonFormField<int>(
-          value: _started,
-          items: items
-              .map((e) => DropdownMenuItem<int>(
-                    value: e,
-                    child: Text(e.toString()),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-              _started = value!;
-            });
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            'Comfort Level',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        Slider(
-          min: 0,
-          max: 10,
-          value: _level.toDouble(),
-          onChanged: (value) {
-            setState(() {
-              _level = value.toInt();
-            });
-          },
-        ),
-        const Divider(),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: () {
-                if (widget.cancel != null) widget.cancel!();
-              },
-              icon: const Icon(Icons.cancel_rounded),
-              label: const Text('Cancel'),
-            ),
-            Expanded(child: Container()),
-            ElevatedButton.icon(
-              onPressed: () {
-                if (widget.callback != null) {
-                  widget.callback!(Skill(
-                    name: _name,
-                    level: _level,
-                    levelModifier: 0,
-                    started: _started,
-                  ));
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Update'),
-              style: ButtonStyle(
-                backgroundColor: MaterialStatePropertyAll(
-                  Theme.of(context).primaryColor,
-                ),
-                foregroundColor: MaterialStatePropertyAll(
-                  Theme.of(context).canvasColor,
-                ),
-              ),
-            )
-          ],
-        )
-      ],
     );
   }
 }

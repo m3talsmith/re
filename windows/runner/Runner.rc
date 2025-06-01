@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.m3talsmith" "\0"
+            VALUE "CompanyName", "com.example" "\0"
             VALUE "FileDescription", "re" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "re" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.m3talsmith. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "re.exe" "\0"
             VALUE "ProductName", "re" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
