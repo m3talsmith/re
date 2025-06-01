@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import 'model.dart';
@@ -15,41 +13,41 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String? _name;
-  String? _address;
-  String? _email;
-  String? _phone;
+  final _nameController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
 
-  _saveName(value) {
+  void _saveName(String value) {
     setState(() {
-      _name = value;
+      _nameController.text = value;
     });
   }
 
-  _saveAddress(value) {
+  void _saveAddress(String value) {
     setState(() {
-      _address = value;
+      _addressController.text = value;
     });
   }
 
-  _saveEmail(value) {
+  void _saveEmail(String value) {
     setState(() {
-      _email = value;
+      _emailController.text = value;
     });
   }
 
-  _savePhone(value) {
+  void _savePhone(String value) {
     setState(() {
-      _phone = value;
+      _phoneController.text = value;
     });
   }
 
-  _saveProfile() {
+  void _saveProfile() {
     Profile profile = Profile()
-      ..name = _name
-      ..address = _address
-      ..email = _email
-      ..phone = _phone;
+      ..name = _nameController.text
+      ..address = _addressController.text
+      ..email = _emailController.text
+      ..phone = _phoneController.text;
     if (widget.callback != null) widget.callback!(profile);
   }
 
@@ -58,10 +56,10 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     if (widget.profile != null) {
       setState(() {
-        _address = widget.profile?.address;
-        _name = widget.profile?.name;
-        _phone = widget.profile?.phone;
-        _email = widget.profile?.email;
+        _addressController.text = widget.profile?.address ?? '';
+        _nameController.text = widget.profile?.name ?? '';
+        _phoneController.text = widget.profile?.phone ?? '';
+        _emailController.text = widget.profile?.email ?? '';
       });
     }
   }
@@ -74,37 +72,32 @@ class _ProfilePageState extends State<ProfilePage> {
           decoration: const InputDecoration(label: Text('Name')),
           onChanged: _saveName,
           onFieldSubmitted: (value) => _saveProfile(),
-          initialValue: _name,
+          controller: _nameController,
         ),
         TextFormField(
           decoration: const InputDecoration(label: Text('Address')),
           onChanged: _saveAddress,
           onFieldSubmitted: (value) => _saveProfile(),
-          initialValue: _address,
+          controller: _addressController,
         ),
         TextFormField(
           decoration: const InputDecoration(label: Text('Email')),
           onChanged: _saveEmail,
           onFieldSubmitted: (value) => _saveProfile(),
-          initialValue: _email,
+          controller: _emailController,
         ),
         TextFormField(
           decoration: const InputDecoration(label: Text('Phone')),
           onChanged: _savePhone,
           onFieldSubmitted: (value) => _saveProfile(),
-          initialValue: _phone,
+          controller: _phoneController,
         ),
         Padding(
           padding: const EdgeInsets.only(top: 16.0),
-          child: ElevatedButton.icon(
+          child: FilledButton.icon(
             onPressed: _saveProfile,
             icon: const Icon(Icons.save_alt_rounded),
             label: const Text('Save Profile'),
-            style: ButtonStyle(
-              backgroundColor: MaterialStatePropertyAll(Theme.of(context).primaryColor),
-              foregroundColor: MaterialStatePropertyAll(Theme.of(context).canvasColor),
-              iconColor: MaterialStatePropertyAll(Theme.of(context).canvasColor)
-            ),
           ),
         )
       ],
