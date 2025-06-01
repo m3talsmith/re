@@ -10,13 +10,17 @@ class SkillsPage extends StatefulWidget {
   final List<Skill>? skills;
 
   @override
-  State<StatefulWidget> createState() => _SkillsPageState(skills: skills);
+  State<StatefulWidget> createState() => _SkillsPageState();
 }
 
 class _SkillsPageState extends State<SkillsPage> {
-  _SkillsPageState({List<Skill>? skills}) : _skills = skills;
-
   List<Skill>? _skills;
+
+  @override
+  void initState() {
+    super.initState();
+    _skills = widget.skills;
+  }
 
   @override
   Widget build(BuildContext context) {
