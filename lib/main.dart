@@ -72,7 +72,7 @@ class _AppPageState extends State<AppPage> {
     _loadGit();
   }
 
-  _loadGit() async {
+  Future<void> _loadGit() async {
     var appDir = await getApplicationSupportDirectory();
     var workingDir = path.join(appDir.path, 'data');
     try {
@@ -91,7 +91,7 @@ class _AppPageState extends State<AppPage> {
     }
   }
 
-  _loadKeys() async {
+  Future<void> _loadKeys() async {
     var appDir = await getApplicationSupportDirectory();
     var keyDir = Directory(path.join(appDir.path, 'keys'));
     var privateKeyFile = File(path.join(keyDir.path, 'key'));
@@ -105,7 +105,7 @@ class _AppPageState extends State<AppPage> {
     });
   }
 
-  _saveKeys() async {
+  Future<void> _saveKeys() async {
     if (_privateKey.isEmpty || _publicKey.isEmpty) return;
 
     var appDir = await getApplicationSupportDirectory();
@@ -122,7 +122,7 @@ class _AppPageState extends State<AppPage> {
     publicKeyFile.writeAsStringSync(_publicKey);
   }
 
-  _generateKeys() async {
+  Future<void> _generateKeys() async {
     final keyPair = await Ed25519().newKeyPair();
 
     var privateBytes = await keyPair.extractPrivateKeyBytes();
@@ -142,7 +142,7 @@ class _AppPageState extends State<AppPage> {
     });
   }
 
-  _syncRepo() async {
+  Future<void> _syncRepo() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
     log(dataDir.path);
@@ -165,19 +165,19 @@ class _AppPageState extends State<AppPage> {
         throwOnError: false, processWorkingDir: dataDir.path);
   }
 
-  _clearData() async {
+  Future<void> _clearData() async {
     _dataMap = {};
     await _saveData();
     _loadData();
   }
 
-  _saveData() async {
+  Future<void> _saveData() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
     var dataFile = File(path.join(dataDir.path, 'data.json'));
     if (!dataFile.existsSync()) dataFile.createSync(recursive: true);
     dataFile.writeAsStringSync(jsonEncode(_dataMap));
-    if (Platform.isWindows || Platform.isLinux) {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       if (await git.GitDir.isGitDir(dataDir.path)) {
         await _syncRepo();
       }
@@ -185,7 +185,7 @@ class _AppPageState extends State<AppPage> {
     await _renderData();
   }
 
-  Future<bool> _loadData() async {
+  Future<void> _loadData() async {
     var appDir = await getApplicationSupportDirectory();
     var dataDir = Directory(path.join(appDir.path, 'data'));
     if (!dataDir.existsSync()) {
@@ -208,10 +208,9 @@ class _AppPageState extends State<AppPage> {
         _renderData();
       });
     }
-    return true;
   }
 
-  _renderData() {
+  Future<void> _renderData() async {
     setState(() {
       _pages = [
         ProfilePage(
@@ -236,7 +235,7 @@ class _AppPageState extends State<AppPage> {
     });
   }
 
-  _saveProfile(Profile profile) {
+  void _saveProfile(Profile profile) {
     setState(() {
       _dataMap['profile'] = profile.toMap();
       _saveData();
@@ -249,7 +248,7 @@ class _AppPageState extends State<AppPage> {
         : Profile();
   }
 
-  _saveSkills(List<Skill> skills) {
+  void _saveSkills(List<Skill> skills) {
     setState(() {
       _dataMap['skills'] = (skills
             ..sort((a, b) =>
@@ -270,7 +269,7 @@ class _AppPageState extends State<AppPage> {
     return skills;
   }
 
-  _saveCompanies(List<Company> companies) {
+  void _saveCompanies(List<Company> companies) {
     setState(() {
       _dataMap['companies'] = (companies
             ..sort((a, b) =>
@@ -291,7 +290,7 @@ class _AppPageState extends State<AppPage> {
     return companies;
   }
 
-  _saveExperiences(List<Experience> experiences) {
+  void _saveExperiences(List<Experience> experiences) {
     setState(() {
       var em = experiences.map((e) => e.toMap());
       _dataMap['experiences'] = em.toList();
@@ -384,17 +383,20 @@ class _AppPageState extends State<AppPage> {
                     ListTile(
                       title: TextButton.icon(
                         onPressed: () async {
+                          final navigator = Navigator.of(context);
                           if (Platform.isIOS || Platform.isMacOS) {
                             var size = MediaQuery.of(context).size;
-                            await Share.shareXFiles(
-                              [
-                                XFile.fromData(
-                                  Uint8List.fromList(
-                                      jsonEncode(_dataMap).codeUnits),
-                                ),
-                              ],
-                              sharePositionOrigin: Rect.fromLTWH(
-                                  0, 0, size.width / 2 - 200, size.height),
+                            await SharePlus.instance.share(
+                              ShareParams(
+                                files: [
+                                  XFile.fromData(
+                                    Uint8List.fromList(
+                                        jsonEncode(_dataMap).codeUnits),
+                                  ),
+                                ],
+                                sharePositionOrigin: Rect.fromLTWH(
+                                    0, 0, size.width / 2 - 200, size.height),
+                              ),
                             );
                             return;
                           }
@@ -405,6 +407,7 @@ class _AppPageState extends State<AppPage> {
                             File(exportPath)
                                 .writeAsStringSync(jsonEncode(_dataMap));
                           }
+                          navigator.pop();
                         },
                         icon: const Icon(Icons.sim_card_download_rounded),
                         label: const Text('Export'),
@@ -435,17 +438,9 @@ class _AppPageState extends State<AppPage> {
                                 ],
                               ),
                             ListTile(
-                              title: ElevatedButton.icon(
+                              title: FilledButton.icon(
                                 icon: const Icon(Icons.link_rounded),
                                 label: const Text('Link to new Git Repo'),
-                                style: ButtonStyle(
-                                  backgroundColor: MaterialStatePropertyAll(
-                                      Theme.of(context).primaryColor),
-                                  foregroundColor: MaterialStatePropertyAll(
-                                      Theme.of(context).canvasColor),
-                                  iconColor: MaterialStatePropertyAll(
-                                      Theme.of(context).canvasColor),
-                                ),
                                 onPressed: () async {
                                   Navigator.of(context).pop();
                                   await showModalBottomSheet(
@@ -518,7 +513,7 @@ class _AppPageState extends State<AppPage> {
                                                       label: const Text(
                                                           'Copy Public Key')),
                                                   Expanded(child: Container()),
-                                                  ElevatedButton.icon(
+                                                  FilledButton.icon(
                                                     onPressed: () async {
                                                       await _syncRepo();
                                                       Navigator.of(context)
@@ -528,17 +523,6 @@ class _AppPageState extends State<AppPage> {
                                                         Icons.link_rounded),
                                                     label: const Text(
                                                         'Link Git Repo'),
-                                                    style: ButtonStyle(
-                                                        backgroundColor:
-                                                            MaterialStatePropertyAll(
-                                                                Theme.of(
-                                                                        context)
-                                                                    .primaryColor),
-                                                        foregroundColor:
-                                                            MaterialStatePropertyAll(
-                                                                Theme.of(
-                                                                        context)
-                                                                    .canvasColor)),
                                                   ),
                                                 ],
                                               ),
