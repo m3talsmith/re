@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 import '../companies/model.dart';
@@ -40,12 +42,12 @@ class _ExperiencePageState extends State<ExperiencePage> {
             builder: (context) {
               return _AddExperience(
                 callback: (experience) {
+                  Navigator.of(context).pop();
                   setState(() {
                     _experiences.add(experience);
                     if (widget.callback != null) {
                       widget.callback!(_experiences);
                     }
-                    Navigator.of(context).pop();
                   });
                 },
                 cancel: () {
@@ -225,19 +227,19 @@ class _AddExperienceState extends State<_AddExperience> {
 
   bool _addingRole = false;
   bool _addingSkill = false;
-  String? _roleTitle;
-  String? _roleSummary;
-  DateTime? _roleStarted;
-  DateTime? _roleEnded;
-  Set<Skill>? _roleSkills;
+  final _roleTitle = TextEditingController();
+  final _roleSummary = TextEditingController();
+  final _roleStarted = TextEditingController();
+  final _roleEnded = TextEditingController();
+  final _roleSkills = <Skill>{};
 
   void _clearRole() {
     setState(() {
-      _roleTitle = null;
-      _roleSummary = null;
-      _roleStarted = DateTime.timestamp();
-      _roleEnded = null;
-      _roleSkills = null;
+      _roleTitle.clear();
+      _roleSummary.clear();
+      _roleStarted.text = DateTime.timestamp().year.toString();
+      _roleEnded.clear();
+      _roleSkills.clear();
       _addingSkill = false;
     });
   }
@@ -250,11 +252,15 @@ class _AddExperienceState extends State<_AddExperience> {
   }
 
   void _addRole() {
+    if (_roleTitle.text.isEmpty) return;
+    if (_roleStarted.text.isEmpty) return;
+    if (_roleSkills.isEmpty) return;
+
     Role role = Role()
-      ..title = _roleTitle
-      ..summary = _roleSummary
-      ..started = _roleStarted
-      ..ended = _roleEnded
+      ..title = _roleTitle.text
+      ..summary = _roleSummary.text
+      ..started = DateTime.tryParse(_roleStarted.text)
+      ..ended = DateTime.tryParse(_roleEnded.text)
       ..skills = _roleSkills?.toList();
     setState(() {
       _roles.add(role);
@@ -295,7 +301,8 @@ class _AddExperienceState extends State<_AddExperience> {
               decoration: const InputDecoration(label: Text('Company')),
             ),
           ),
-          ..._roles.map((e) => ListTile(title: Text(e.title!))),
+          if (_roles.isNotEmpty)
+            ..._roles.map((e) => ListTile(title: Text(e.title!))),
           if (_addingRole)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,25 +312,17 @@ class _AddExperienceState extends State<_AddExperience> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 TextFormField(
+                  controller: _roleTitle,
                   decoration: const InputDecoration(label: Text('Title')),
-                  onChanged: (value) {
-                    setState(() {
-                      _roleTitle = value;
-                    });
-                  },
                 ),
                 TextFormField(
+                  controller: _roleSummary,
                   decoration: const InputDecoration(
                     label: Text('Summary'),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _roleSummary = value;
-                    });
-                  },
                 ),
                 Wrap(
-                  children: _roleSkills?.map((e) {
+                  children: _roleSkills.map((e) {
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Chip(
@@ -331,7 +330,7 @@ class _AddExperienceState extends State<_AddExperience> {
                             deleteIcon: const Icon(Icons.remove_rounded),
                             onDeleted: () {
                               setState(() {
-                                _roleSkills?.remove(e);
+                                _roleSkills.remove(e);
                               });
                             },
                           ),
@@ -349,8 +348,7 @@ class _AddExperienceState extends State<_AddExperience> {
                         .toList(),
                     onChanged: (value) {
                       setState(() {
-                        _roleSkills ??= <Skill>{};
-                        _roleSkills?.add(value!);
+                        _roleSkills.add(value!);
                         _addingSkill = false;
                       });
                     },
@@ -388,7 +386,7 @@ class _AddExperienceState extends State<_AddExperience> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Expanded(child: Container()),
-                        Text(_roleStarted?.year.toString() ?? ''),
+                        Text(_roleStarted.text),
                         IconButton(
                             onPressed: () async {
                               var date = await showDatePicker(
@@ -397,7 +395,7 @@ class _AddExperienceState extends State<_AddExperience> {
                                       DateTime(DateTime.timestamp().year - 50),
                                   lastDate: DateTime.timestamp());
                               setState(() {
-                                _roleStarted = date;
+                                _roleStarted.text = date?.year.toString() ?? '';
                               });
                             },
                             icon: const Icon(Icons.calendar_month_rounded))
@@ -422,7 +420,7 @@ class _AddExperienceState extends State<_AddExperience> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Expanded(child: Container()),
-                        Text(_roleEnded?.year.toString() ?? ''),
+                        Text(_roleEnded.text),
                         IconButton(
                             onPressed: () async {
                               var date = await showDatePicker(
@@ -431,7 +429,7 @@ class _AddExperienceState extends State<_AddExperience> {
                                       DateTime(DateTime.timestamp().year - 50),
                                   lastDate: DateTime.timestamp());
                               setState(() {
-                                _roleEnded = date;
+                                _roleEnded.text = date?.year.toString() ?? '';
                               });
                             },
                             icon: const Icon(Icons.calendar_month_rounded))
@@ -444,21 +442,12 @@ class _AddExperienceState extends State<_AddExperience> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      ElevatedButton.icon(
+                      FilledButton.icon(
                         onPressed: () {
-                          setState(() {
-                            _addRole();
-                            _addingRole = false;
-                          });
+                          _addRole();
                         },
-                        icon: const Icon(Icons.add_rounded),
+                        icon: const Icon(Icons.check_rounded),
                         label: const Text('Add Role'),
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                              Theme.of(context).primaryColor),
-                          foregroundColor: WidgetStatePropertyAll(
-                              Theme.of(context).canvasColor),
-                        ),
                       )
                     ],
                   ),
@@ -485,7 +474,7 @@ class _AddExperienceState extends State<_AddExperience> {
                 label: const Text('Cancel'),
               ),
               Expanded(child: Container()),
-              ElevatedButton.icon(
+              FilledButton.icon(
                 onPressed: () {
                   List<String> errors = [];
                   if (_company == null) {
@@ -525,16 +514,10 @@ class _AddExperienceState extends State<_AddExperience> {
                   var experience = Experience()
                     ..company = _company
                     ..roles = _roles;
-                  if (widget.callback != null) widget.callback!(experience);
+                  widget.callback?.call(experience);
                 },
                 icon: const Icon(Icons.check_rounded),
                 label: const Text('Add Experience'),
-                style: ButtonStyle(
-                  backgroundColor:
-                      WidgetStatePropertyAll(Theme.of(context).primaryColor),
-                  foregroundColor:
-                      WidgetStatePropertyAll(Theme.of(context).canvasColor),
-                ),
               )
             ],
           )

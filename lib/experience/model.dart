@@ -20,10 +20,7 @@ class Experience {
     for (Role role in roles ?? []) {
       roleData.add(role.toMap());
     }
-    return {
-      'company': company?.toMap(),
-      'roles': roleData
-    };
+    return {'company': company?.toMap(), 'roles': roleData};
   }
 }
 
@@ -31,9 +28,9 @@ class Role {
   Role();
 
   Role.fromMap(Map<String, dynamic> data) {
-    title = data['title'];
-    summary = data['summary'];
-    started = DateTime.parse(data['started']);
+    title = data['title'] ?? '';
+    summary = data['summary'] ?? '';
+    started = data['started'] != null ? DateTime.parse(data['started']) : null;
     ended = data['ended'] != null ? DateTime.parse(data['ended']) : null;
     skills ??= [];
     for (var skill in data['skills'] ?? []) {
@@ -49,7 +46,8 @@ class Role {
 
   Map<String, dynamic> toMap() {
     List<Map<String, dynamic>> skillData = [];
-    var sortedSkills = skills?..sort((a, b) => a.started!.compareTo(b.started!));
+    var sortedSkills = skills
+      ?..sort((a, b) => a.started!.compareTo(b.started!));
     for (Skill skill in sortedSkills ?? []) {
       skillData.add(skill.toMap());
     }
