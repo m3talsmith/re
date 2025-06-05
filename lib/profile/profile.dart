@@ -18,30 +18,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  void _saveName(String value) {
-    setState(() {
-      _nameController.text = value;
-    });
-  }
-
-  void _saveAddress(String value) {
-    setState(() {
-      _addressController.text = value;
-    });
-  }
-
-  void _saveEmail(String value) {
-    setState(() {
-      _emailController.text = value;
-    });
-  }
-
-  void _savePhone(String value) {
-    setState(() {
-      _phoneController.text = value;
-    });
-  }
-
   void _saveProfile() {
     Profile profile = Profile()
       ..name = _nameController.text
@@ -49,6 +25,9 @@ class _ProfilePageState extends State<ProfilePage> {
       ..email = _emailController.text
       ..phone = _phoneController.text;
     if (widget.callback != null) widget.callback!(profile);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile saved')),
+    );
   }
 
   @override
@@ -70,25 +49,21 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         TextFormField(
           decoration: const InputDecoration(label: Text('Name')),
-          onChanged: _saveName,
           onFieldSubmitted: (value) => _saveProfile(),
           controller: _nameController,
         ),
         TextFormField(
           decoration: const InputDecoration(label: Text('Address')),
-          onChanged: _saveAddress,
           onFieldSubmitted: (value) => _saveProfile(),
           controller: _addressController,
         ),
         TextFormField(
           decoration: const InputDecoration(label: Text('Email')),
-          onChanged: _saveEmail,
           onFieldSubmitted: (value) => _saveProfile(),
           controller: _emailController,
         ),
         TextFormField(
           decoration: const InputDecoration(label: Text('Phone')),
-          onChanged: _savePhone,
           onFieldSubmitted: (value) => _saveProfile(),
           controller: _phoneController,
         ),
